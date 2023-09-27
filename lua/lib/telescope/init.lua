@@ -76,8 +76,6 @@ M.open = function(opts)
 
 	local entry_maker_opts = {}
 	local max_toggleterm_name_length = math.max(unpack(toggleterm_name_lengths))
-	-- local max_bufnr = math.max(bufnrs)
-	-- entry_maker_opts.bufnr_width = #tostring(max_bufnr)
 	entry_maker_opts.bufnr_width = max_toggleterm_name_length
 	-- ──────────────────────────────────────────────────────────────────────
 	pickers
@@ -87,24 +85,17 @@ M.open = function(opts)
 			finder = finders.new_table({
 				results = buffers,
 				entry_maker = displayer(entry_maker_opts),
-				-- entry_maker = function(entry)
-				-- 	return {
-				-- 		value = entry,
-				-- 		text = tostring(entry.bufnr),
-				-- 		display = tostring(entry.name),
-				-- 		ordinal = tostring(entry.bufnr),
-				-- 	}
-				-- end,
 			}),
 			sorter = conf.generic_sorter(opts),
 			attach_mappings = function(prompt_bufnr, map)
 				actions.select_default:replace(function()
+					actions.close(prompt_bufnr) -- close telescope
 					local selection = actions_state.get_selected_entry()
 					if selection == nil then
 						return
 					end
 					local bufnr = tostring(selection.value.bufnr)
-					local toggle_number = selection.value.toggle_number
+					local toggle_number = selection.value.info.variables.toggle_number
 					require("toggleterm").toggle_command(bufnr, toggle_number)
 					vim.defer_fn(function()
 						vim.cmd("stopinsert")

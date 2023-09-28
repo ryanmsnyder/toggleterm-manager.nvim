@@ -76,16 +76,6 @@ function M.gen_displayer(opts)
 			end
 		end
 
-		-- DELETE
-		local desktop_path = "/Users/ryan.snyder/Desktop/debug.txt"
-		-- Open the debug file in append mode
-		local file = io.open(desktop_path, "a")
-		-- Write the debug message to the file
-		file:write(entry.term_name .. "\n")
-		-- Close the file
-		file:close()
-		-- DELETE
-
 		return make_entry.set_default_entry_mt({
 			-- value = bufname,
 			value = entry,

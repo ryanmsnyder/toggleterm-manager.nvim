@@ -36,7 +36,7 @@ Using [ `lazy.nvim` ](https://github.com/folke/lazy.nvim) in lua:
 
 ```lua
 require("telescope-toggleterm").setup {
-   telescope_mappings = {
+   mappings = {
       -- <ctrl-c> : kill the terminal buffer (default) .
       ["<C-c>"] = require("telescope-toggleterm").actions.exit_terminal,
    },

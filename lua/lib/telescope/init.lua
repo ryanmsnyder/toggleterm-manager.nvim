@@ -1,8 +1,7 @@
-local pickers, finders, make_entry, actions, actions_state, conf
+local pickers, finders, actions, actions_state, conf
 if pcall(require, "telescope") then
 	pickers = require("telescope.pickers")
 	finders = require("telescope.finders")
-	make_entry = require("telescope.make_entry")
 	actions = require("telescope.actions")
 	actions_state = require("telescope.actions.state")
 	conf = require("telescope.config").values
@@ -14,27 +13,22 @@ if not status_ok then
 	error("Cannot find toggleterm!")
 end
 ---
-
 local displayer = require("lib.displayer").gen_displayer
 ---
 
 local M = {}
 M.open = function(opts)
+	local config = require("config").options
+
 	local bufnrs = vim.tbl_filter(function(b)
 		return vim.api.nvim_buf_get_option(b, "filetype") == "toggleterm"
 	end, vim.api.nvim_list_bufs())
-	-- ╭────────────────────────────────────────────────────────────────────╮
-	-- │                                note                                │
-	-- ╰────────────────────────────────────────────────────────────────────╯
-	-- uncommenting this prevents
-	-- telescope from opening a modal windows when there are
-	-- no terminal buffers open.
-	-- ──────────────────────────────────────────────────────────────────────
+
 	if not next(bufnrs) then
 		print("no terminal buffers are opened/hidden")
 		return
 	end
-	-- ──────────────────────────────────────────────────────────────────────
+
 	table.sort(bufnrs, function(a, b)
 		return vim.fn.getbufinfo(a)[1].lastused > vim.fn.getbufinfo(b)[1].lastused
 	end)
@@ -80,7 +74,8 @@ M.open = function(opts)
 	-- ──────────────────────────────────────────────────────────────────────
 	pickers
 		.new(opts, {
-			prompt_title = "Terminal Buffers",
+			prompt_title = config.prompt_title,
+			preview_title = config.preview_title,
 			previewer = conf.grep_previewer(opts),
 			finder = finders.new_table({
 				results = buffers,
@@ -101,10 +96,9 @@ M.open = function(opts)
 						vim.cmd("stopinsert")
 					end, 0)
 				end)
-				-- ╭────────────────────────────────────────────────────────────────────╮
-				-- │                           setup mappings                           │
-				-- ╰────────────────────────────────────────────────────────────────────╯
-				local mappings = require("config").options.telescope_mappings
+
+				-- mappings
+				local mappings = config.mappings
 				for keybind, action in pairs(mappings) do
 					map("i", keybind, function()
 						action(prompt_bufnr)

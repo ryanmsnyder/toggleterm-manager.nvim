@@ -5,6 +5,11 @@ local defaults = {
 	mappings = {},
 	prompt_title = " Pick Term",
 	preview_title = "Preview",
+	-- results_format = {
+	-- 	"flag",
+	-- 	"term_name",
+	-- },
+	term_name_icon = true,
 }
 M.options = {}
 function M.setup(opts)

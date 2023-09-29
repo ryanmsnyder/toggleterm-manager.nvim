@@ -70,8 +70,10 @@ M.open = function(opts)
 
 	local entry_maker_opts = {}
 	local max_toggleterm_name_length = math.max(unpack(toggleterm_name_lengths))
-	entry_maker_opts.bufnr_width = max_toggleterm_name_length
-	-- ──────────────────────────────────────────────────────────────────────
+	entry_maker_opts.toggle_name_width = max_toggleterm_name_length
+	local max_bufnr = math.max(unpack(bufnrs))
+	entry_maker_opts.bufnr_width = #tostring(max_bufnr)
+
 	pickers
 		.new(opts, {
 			prompt_title = config.prompt_title,

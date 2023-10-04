@@ -72,7 +72,16 @@ M.open = function(opts)
 	local max_toggleterm_name_length = math.max(unpack(toggleterm_name_lengths))
 	entry_maker_opts.toggle_name_width = max_toggleterm_name_length
 	local max_bufnr = math.max(unpack(bufnrs))
-	entry_maker_opts.bufnr_width = #tostring(max_bufnr)
+	entry_maker_opts.max_bufnr_width = #tostring(max_bufnr)
+
+	local path_to_desktop = "/Users/ryan.snyder/Desktop/bufnr_width.txt"
+	local file = io.open(path_to_desktop, "a") -- "a" means append mode
+	if not file then
+		vim.api.nvim_err_writeln("Failed to open debug file for writing.")
+		return
+	end
+	file:write(vim.inspect(entry_maker_opts) .. "\n") -- Write the content and a newline
+	file:close()
 
 	pickers
 		.new(opts, {

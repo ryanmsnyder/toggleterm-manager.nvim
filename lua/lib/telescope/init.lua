@@ -12,9 +12,6 @@ local status_ok, _ = pcall(require, "toggleterm")
 if not status_ok then
 	error("Cannot find toggleterm!")
 end
----
-local displayer = require("lib.displayer").gen_displayer
----
 
 local M = {}
 M.open = function(opts)
@@ -87,6 +84,8 @@ M.open = function(opts)
 	end
 	file:write(vim.inspect(entry_maker_opts) .. "\n") -- Write the content and a newline
 	file:close()
+
+	local displayer = require("lib.displayer").gen_displayer
 
 	pickers
 		.new(opts, {

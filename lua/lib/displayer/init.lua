@@ -3,11 +3,11 @@ local utils = require("telescope.utils")
 local strings = require("plenary.strings")
 local Path = require("plenary.path")
 local make_entry = require("telescope.make_entry")
+local config = require("config").options
 
 local M = {}
 
 local function process_loop(target_table, action)
-	local config = require("config").options
 	local icon_index = 0 -- to ensure the terminal icon is always in front of term_name
 
 	for index, value in ipairs(config.results_format) do
@@ -110,7 +110,7 @@ function M.gen_displayer(opts)
 	end
 
 	local displayer = entry_display.create({
-		separator = "",
+		separator = config.separator,
 		items = items,
 	})
 

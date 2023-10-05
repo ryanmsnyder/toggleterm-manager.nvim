@@ -6,11 +6,31 @@ local make_entry = require("telescope.make_entry")
 
 local M = {}
 
--- TODO: cache this so it's not run everytime
+local function process_loop(target_table, action)
+	local config = require("config").options
+	local icon_index = 0 -- to ensure the terminal icon is always in front of term_name
+
+	for index, value in ipairs(config.results_format) do
+		if value == "flag" then
+			table.insert(target_table, index + icon_index, action.flag)
+		elseif value == "bufnr" then
+			table.insert(target_table, index + icon_index, action.bufnr)
+		elseif value == "term_name" then
+			table.insert(target_table, index + icon_index, action.term_name)
+
+			-- if user config set term_name_icon = true
+			if config.term_name_icon then
+				table.insert(target_table, index, action.icon)
+				icon_index = 1
+			end
+		end
+	end
+end
+
 local function results_formatter(opts)
 	opts = opts or {}
 
-	local config = require("config").options
+	local items = {}
 
 	local disable_devicons = opts.disable_devicons
 	local icon_width = 0
@@ -20,26 +40,16 @@ local function results_formatter(opts)
 		icon_width = strings.strdisplaywidth(icon)
 	end
 
-	local items = {}
-	for index, value in ipairs(config.results_format) do
-		if value == "flag" then
-			table.insert(items, index, { width = 4 })
-		elseif value == "bufnr" then
-			table.insert(items, index, { width = opts.max_bufnr_width })
-		elseif value == "term_name" then
-			table.insert(items, index, { width = opts.toggle_name_width })
+	local items_action = {
+		flag = { width = 4 },
+		bufnr = { width = opts.max_bufnr_width },
+		term_name = { width = opts.toggle_name_width },
+		icon = { width = icon_width },
+	}
 
-			-- if user config set term_name_icon = true
-			if config.term_name_icon then
-				table.insert(items, index, { width = icon_width })
-			end
-		end
-
-		-- if last iteration then replace last element of items table with remaining = true
-		if index == #config.results_format then
-			items[#items] = { remaining = true }
-		end
-	end
+	process_loop(items, items_action)
+	-- replace last element of items table with remaining = true
+	items[#items] = { remaining = true }
 
 	local display_formatter = function(entry)
 		entry = entry or {}
@@ -47,46 +57,39 @@ local function results_formatter(opts)
 		local displayer_table = {}
 		local display_bufname = utils.transform_path(opts, entry.filename)
 
-		for index, value in ipairs(config.results_format) do
-			if value == "flag" then
-				table.insert(displayer_table, index, { entry.indicator, "TelescopeResultsComment" })
-			elseif value == "bufnr" then
-				-- DELETE
-				local path_to_desktop = "/Users/ryan.snyder/Desktop/max_bufnr_width_displayer.txt"
-				local file = io.open(path_to_desktop, "a") -- "a" means append mode
-				if not file then
-					vim.api.nvim_err_writeln("Failed to open debug file for writing.")
-					return
-				end
-				file:write("max_bufnr_width: " .. (opts.max_bufnr_width and opts.max_bufnr_width or "") .. "\n") -- Write the content and a newline
-				-- DELETE
-				local leading_spaces = opts.max_bufnr_width
-						and string.rep(" ", opts.max_bufnr_width - #tostring(entry.bufnr))
-					or "" -- for right aligning the bufnr's
-				-- table.insert(displayer_table, index, { leading_spaces .. tostring(entry.bufnr), "TelescopeResultsNumber" })
-				table.insert(
-					displayer_table,
-					index,
-					{ leading_spaces .. tostring(entry.bufnr), "TelescopeResultsNumber" }
-				)
-				file:write(
-					"number leading spaces: "
-						.. (opts.max_bufnr_width and (opts.max_bufnr_width - #tostring(entry.bufnr)) or "")
-						.. "\n"
-				)
-				file:close()
-			elseif value == "term_name" then
-				table.insert(displayer_table, index, entry.ordinal)
-
-				-- if user config set term_name_icon = true
-				if config.term_name_icon then
-					table.insert(displayer_table, index, { icon, hl_group })
-				end
-			end
+		local leading_spaces = opts.max_bufnr_width and string.rep(" ", opts.max_bufnr_width - #tostring(entry.bufnr))
+			or ""
+		local displayer_action = {
+			flag = { entry.indicator, "TelescopeResultsComment" },
+			bufnr = { leading_spaces .. tostring(entry.bufnr), "TelescopeResultsNumber" },
+			term_name = entry.ordinal,
+			icon = { icon, hl_group },
+		}
+		process_loop(displayer_table, displayer_action)
+		-- DELETE
+		local path_to_desktop = "/Users/ryan.snyder/Desktop/displayer_table.txt"
+		local file = io.open(path_to_desktop, "a") -- "a" means append mode
+		if not file then
+			vim.api.nvim_err_writeln("Failed to open debug file for writing.")
+			return
 		end
+		file:write(vim.inspect(displayer_table) .. "\n") -- Write the content and a newline
+		file:close()
+		-- DELETE
 
 		return displayer_table
 	end
+
+	-- DELETE
+	local path_to_desktop = "/Users/ryan.snyder/Desktop/items.txt"
+	local file = io.open(path_to_desktop, "a") -- "a" means append mode
+	if not file then
+		vim.api.nvim_err_writeln("Failed to open debug file for writing.")
+		return
+	end
+	file:write(vim.inspect(items) .. "\n") -- Write the content and a newline
+	file:close()
+	-- DELETE
 
 	return items, display_formatter
 end

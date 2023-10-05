@@ -32,6 +32,7 @@ M.open = function(opts)
 	table.sort(bufnrs, function(a, b)
 		return vim.fn.getbufinfo(a)[1].lastused > vim.fn.getbufinfo(b)[1].lastused
 	end)
+	local entry_maker_opts = {}
 	local buffers = {}
 	local toggleterm_name_lengths = {}
 	for _, bufnr in ipairs(bufnrs) do
@@ -42,7 +43,11 @@ M.open = function(opts)
 
 		table.insert(toggleterm_name_lengths, #term_name)
 
-		local flag = (bufnr == vim.fn.bufnr("") and "%") or (bufnr == vim.fn.bufnr("#") and "#" or " ")
+		-- local flag = (bufnr == vim.fn.bufnr("") and "%") or (bufnr == vim.fn.bufnr("#") and "#" or " ")
+		local flag = (bufnr == vim.fn.bufnr("") and "%") or (bufnr == vim.fn.bufnr("#") and "#" or "")
+		if flag ~= "" then
+			entry_maker_opts.flag_exists = true
+		end
 
 		local element = {
 			bufnr = bufnr,
@@ -68,9 +73,9 @@ M.open = function(opts)
 		table.insert(buffers, element)
 	end
 
-	local entry_maker_opts = {}
 	local max_toggleterm_name_length = math.max(unpack(toggleterm_name_lengths))
 	entry_maker_opts.toggle_name_width = max_toggleterm_name_length
+
 	local max_bufnr = math.max(unpack(bufnrs))
 	entry_maker_opts.max_bufnr_width = #tostring(max_bufnr)
 

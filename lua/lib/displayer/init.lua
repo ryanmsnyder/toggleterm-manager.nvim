@@ -11,8 +11,8 @@ local function process_loop(target_table, action)
 	local icon_index = 0 -- to ensure the terminal icon is always in front of term_name
 
 	for index, value in ipairs(config.results_format) do
-		if value == "flag" then
-			table.insert(target_table, index + icon_index, action.flag)
+		if value == "indicator" then
+			table.insert(target_table, index + icon_index, action.indicator)
 		elseif value == "bufnr" then
 			table.insert(target_table, index + icon_index, action.bufnr)
 		elseif value == "term_name" then
@@ -41,7 +41,7 @@ local function results_formatter(opts)
 	end
 
 	local items_action = {
-		flag = { width = 4 },
+		indicator = { width = (opts.flag_exists and 2 or 1) },
 		bufnr = { width = opts.max_bufnr_width },
 		term_name = { width = opts.toggle_name_width },
 		icon = { width = icon_width },
@@ -57,11 +57,13 @@ local function results_formatter(opts)
 		local displayer_table = {}
 		local display_bufname = utils.transform_path(opts, entry.filename)
 
-		local leading_spaces = opts.max_bufnr_width and string.rep(" ", opts.max_bufnr_width - #tostring(entry.bufnr))
-			or ""
+		local bufnr_leading_spaces = opts.max_bufnr_width
+				and string.rep(" ", opts.max_bufnr_width - #tostring(entry.bufnr))
+			or "" -- for right aligning bufnr column
+		local indicator_leading_spaces = opts.flag_exists and #entry.indicator == 1 and " " or "" -- for right aligning indicator column
 		local displayer_action = {
-			flag = { entry.indicator, "TelescopeResultsComment" },
-			bufnr = { leading_spaces .. tostring(entry.bufnr), "TelescopeResultsNumber" },
+			indicator = { indicator_leading_spaces .. entry.indicator, "TelescopeResultsComment" },
+			bufnr = { bufnr_leading_spaces .. tostring(entry.bufnr), "TelescopeResultsNumber" },
 			term_name = entry.ordinal,
 			icon = { icon, hl_group },
 		}
@@ -108,7 +110,7 @@ function M.gen_displayer(opts)
 	end
 
 	local displayer = entry_display.create({
-		separator = " ",
+		separator = "",
 		items = items,
 	})
 
@@ -129,9 +131,10 @@ function M.gen_displayer(opts)
 		bufname = Path:new(bufname):normalize(cwd)
 
 		local hidden = entry.info.hidden == 1 and "h" or "a"
-		local readonly = vim.api.nvim_buf_get_option(entry.bufnr, "readonly") and "=" or " "
-		local changed = entry.info.changed == 1 and "+" or " "
-		local indicator = entry.flag .. hidden .. readonly .. changed
+		-- local readonly = vim.api.nvim_buf_get_option(entry.bufnr, "readonly") and "=" or " "
+		-- local changed = entry.info.changed == 1 and "+" or " "
+		-- local indicator = entry.flag .. hidden .. readonly .. changed
+		local indicator = entry.flag .. hidden
 		local lnum = 1
 
 		-- account for potentially stale lnum as getbufinfo might not be updated or from resuming buffers picker

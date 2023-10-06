@@ -31,14 +31,14 @@ M.open = function(opts)
 	end)
 	local entry_maker_opts = {}
 	local buffers = {}
-	local toggleterm_name_lengths = {}
+	local term_name_lengths = {}
 	for _, bufnr in ipairs(bufnrs) do
 		local info = vim.fn.getbufinfo(bufnr)[1]
 		local term_number = vim.api.nvim_buf_get_var(info.bufnr, "toggle_number")
 		local display_name = require("toggleterm.terminal").get(term_number, false).display_name
 		local term_name = display_name or tostring(term_number) -- number icon if id is less than 11
 
-		table.insert(toggleterm_name_lengths, #term_name)
+		table.insert(term_name_lengths, #term_name)
 
 		-- local flag = (bufnr == vim.fn.bufnr("") and "%") or (bufnr == vim.fn.bufnr("#") and "#" or " ")
 		local flag = (bufnr == vim.fn.bufnr("") and "%") or (bufnr == vim.fn.bufnr("#") and "#" or "")
@@ -70,7 +70,7 @@ M.open = function(opts)
 		table.insert(buffers, element)
 	end
 
-	local max_toggleterm_name_length = math.max(unpack(toggleterm_name_lengths))
+	local max_toggleterm_name_length = math.max(unpack(term_name_lengths))
 	entry_maker_opts.toggle_name_width = max_toggleterm_name_length
 
 	local max_bufnr = math.max(unpack(bufnrs))

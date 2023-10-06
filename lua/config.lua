@@ -5,10 +5,10 @@ local defaults = {
 	mappings = {},
 	prompt_title = " Pick Term",
 	preview_title = "Preview",
-	-- results_format = {
-	-- 	"flag",
-	-- 	"term_name",
-	-- },
+	results_format = {
+		"indicator",
+		"term_name",
+	},
 	term_name_icon = true,
 	separator = " ",
 }

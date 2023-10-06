@@ -8,20 +8,21 @@ local config = require("config").options
 local M = {}
 
 local function process_loop(target_table, action)
-	local icon_index = 0 -- to ensure the terminal icon is always in front of term_name
-
-	for index, value in ipairs(config.results_format) do
+	for _, value in ipairs(config.results_format) do
 		if value == "indicator" then
-			table.insert(target_table, index + icon_index, action.indicator)
+			table.insert(target_table, action.indicator)
 		elseif value == "bufnr" then
-			table.insert(target_table, index + icon_index, action.bufnr)
+			table.insert(target_table, action.bufnr)
 		elseif value == "term_name" then
-			table.insert(target_table, index + icon_index, action.term_name)
-
-			-- if user config set term_name_icon = true
+			-- if user config set term_name_icon = true, insert the icon before term_name
 			if config.term_name_icon then
-				table.insert(target_table, index, action.icon)
-				icon_index = 1
+				table.insert(target_table, action.icon)
+			end
+			table.insert(target_table, action.term_name)
+		elseif value == "space" then
+			local lastItem = target_table[#target_table]
+			if lastItem and type(lastItem) == "table" and lastItem.width then
+				lastItem.width = lastItem.width + 1
 			end
 		end
 	end

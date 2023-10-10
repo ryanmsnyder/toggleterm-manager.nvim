@@ -7,9 +7,10 @@ local defaults = {
 	preview_title = "Preview",
 	results_format = {
 		"indicator",
+		"space",
+		"term_icon",
 		"term_name",
 	},
-	term_name_icon = true,
 	separator = " ",
 }
 M.options = {}

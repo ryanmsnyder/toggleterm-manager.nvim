@@ -7,7 +7,7 @@ local config = require("config").options
 
 local M = {}
 
-local function process_results_config(target_table, action)
+local function process_results_config(target_table, insert_val)
 	for _, configItem in ipairs(config.results_format) do
 		-- if value in results_config is a table (contains the column type and highlight group)
 		local col
@@ -17,15 +17,15 @@ local function process_results_config(target_table, action)
 			col = configItem
 		end
 		if col == "indicator" then
-			table.insert(target_table, action.indicator)
+			table.insert(target_table, insert_val.indicator)
 		elseif col == "bufnr" then
-			table.insert(target_table, action.bufnr)
-		elseif col == "display_bufname" then
-			table.insert(target_table, action.display_bufname)
+			table.insert(target_table, insert_val.bufnr)
+		elseif col == "bufname" then
+			table.insert(target_table, insert_val.bufname)
 		elseif col == "term_name" then
-			table.insert(target_table, action.term_name)
+			table.insert(target_table, insert_val.term_name)
 		elseif col == "term_icon" then
-			table.insert(target_table, action.term_icon)
+			table.insert(target_table, insert_val.term_icon)
 		elseif col == "space" then
 			local prevValue = target_table[#target_table]
 			if prevValue and type(prevValue) == "table" and prevValue.width then
@@ -33,10 +33,10 @@ local function process_results_config(target_table, action)
 			end
 		end
 
-		-- if the target_table is the displayer_table and the value just inserted was a table, replace the second item of the
+		-- if the target_table is the displayer_table and the current config item iterable is a table, replace the second item of the
 		-- value (the highlight group) with the highlight group that the user provided in the config
 		local currentValue = target_table[#target_table]
-		if currentValue and type(currentValue) == "table" and not currentValue.width then
+		if currentValue and type(configItem) == "table" and not currentValue.width then
 			currentValue[2] = configItem[2]
 		end
 	end
@@ -47,23 +47,19 @@ local function results_formatter(opts)
 
 	local items = {}
 
-	local disable_devicons = opts.disable_devicons
 	local icon_width = 0
-	local icon, hl_group
-	if not disable_devicons then
-		icon, hl_group = utils.get_devicons(".terminal", disable_devicons)
-		icon_width = strings.strdisplaywidth(icon)
-	end
+	local term_icon = config.term_icon
+	icon_width = strings.strdisplaywidth(term_icon)
 
-	local items_action = {
-		indicator = { width = (opts.flag_exists and 2 or 1) },
+	local items_col_widths = {
+		bufname = { width = opts.max_bufname_width },
 		bufnr = { width = opts.max_bufnr_width },
-		term_name = { width = opts.toggle_name_width },
+		indicator = { width = (opts.flag_exists and 2 or 1) },
 		term_icon = { width = icon_width },
-		display_bufname = { width = opts.max_bufname_width },
+		term_name = { width = opts.toggle_name_width },
 	}
 
-	process_results_config(items, items_action)
+	process_results_config(items, items_col_widths)
 	-- replace last element of items table with remaining = true
 	items[#items] = { remaining = true }
 
@@ -72,19 +68,20 @@ local function results_formatter(opts)
 
 		local displayer_table = {}
 		local display_bufname = utils.transform_path(opts, entry.filename)
+		local _, hl_group = utils.get_devicons(".terminal", false)
 
 		local bufnr_leading_spaces = opts.max_bufnr_width
 				and string.rep(" ", opts.max_bufnr_width - #tostring(entry.bufnr))
 			or "" -- for right aligning bufnr column
 		local indicator_leading_spaces = opts.flag_exists and #entry.indicator == 1 and " " or "" -- for right aligning indicator column
-		local displayer_action = {
-			indicator = { indicator_leading_spaces .. entry.indicator, "TelescopeResultsComment" },
+		local displayer_col_vals = {
+			bufname = { display_bufname },
 			bufnr = { bufnr_leading_spaces .. tostring(entry.bufnr), "TelescopeResultsNumber" },
-			display_bufname = { display_bufname, "Normal" },
-			term_name = { entry.ordinal, "Normal" },
-			term_icon = { icon, hl_group },
+			indicator = { indicator_leading_spaces .. entry.indicator, "TelescopeResultsComment" },
+			term_icon = { term_icon, hl_group },
+			term_name = { entry.ordinal },
 		}
-		process_results_config(displayer_table, displayer_action)
+		process_results_config(displayer_table, displayer_col_vals)
 		-- DELETE
 		local path_to_desktop = "/Users/ryan.snyder/Desktop/displayer_table.txt"
 		local file = io.open(path_to_desktop, "a") -- "a" means append mode

@@ -79,16 +79,6 @@ M.open = function(opts)
 
 	local max_bufname = math.max(unpack(bufname_lengths))
 	entry_maker_opts.max_bufname_width = max_bufname
-	print(entry_maker_opts.max_bufname_width)
-
-	local path_to_desktop = "/Users/ryan.snyder/Desktop/buffers.txt"
-	local file = io.open(path_to_desktop, "a") -- "a" means append mode
-	if not file then
-		vim.api.nvim_err_writeln("Failed to open debug file for writing.")
-		return
-	end
-	file:write(vim.inspect(buffers) .. "\n") -- Write the content and a newline
-	file:close()
 
 	local displayer = require("lib.displayer").gen_displayer
 

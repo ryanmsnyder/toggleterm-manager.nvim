@@ -12,6 +12,7 @@ local defaults = {
 		"term_name",
 	},
 	separator = " ",
+	term_icon = "",
 }
 M.options = {}
 function M.setup(opts)

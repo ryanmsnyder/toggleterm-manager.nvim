@@ -82,30 +82,9 @@ local function results_formatter(opts)
 			term_name = { entry.ordinal },
 		}
 		process_results_config(displayer_table, displayer_col_vals)
-		-- DELETE
-		local path_to_desktop = "/Users/ryan.snyder/Desktop/displayer_table.txt"
-		local file = io.open(path_to_desktop, "a") -- "a" means append mode
-		if not file then
-			vim.api.nvim_err_writeln("Failed to open debug file for writing.")
-			return
-		end
-		file:write(vim.inspect(displayer_table) .. "\n") -- Write the content and a newline
-		file:close()
-		-- DELETE
 
 		return displayer_table
 	end
-
-	-- DELETE
-	local path_to_desktop = "/Users/ryan.snyder/Desktop/items.txt"
-	local file = io.open(path_to_desktop, "a") -- "a" means append mode
-	if not file then
-		vim.api.nvim_err_writeln("Failed to open debug file for writing.")
-		return
-	end
-	file:write(vim.inspect(items) .. "\n") -- Write the content and a newline
-	file:close()
-	-- DELETE
 
 	return items, display_formatter
 end

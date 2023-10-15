@@ -12,6 +12,7 @@ local status_ok, _ = pcall(require, "toggleterm")
 if not status_ok then
 	error("Cannot find toggleterm!")
 end
+local util = require("lib.util")
 
 local M = {}
 M.open = function(opts)
@@ -85,6 +86,8 @@ M.open = function(opts)
 	pickers
 		.new(opts, {
 			prompt_title = config.prompt_title,
+			results_title = config.display_mappings and util.format_results_title(config.mappings)
+				or config.results_title,
 			preview_title = config.preview_title,
 			previewer = conf.grep_previewer(opts),
 			finder = finders.new_table({

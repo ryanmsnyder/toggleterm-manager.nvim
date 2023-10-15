@@ -5,6 +5,7 @@ local defaults = {
 	mappings = {},
 	prompt_title = " Pick Term",
 	preview_title = "Preview",
+	results_title = "Results",
 	results_format = {
 		"indicator",
 		"space",
@@ -12,6 +13,7 @@ local defaults = {
 		"term_name",
 	},
 	separator = " ",
+	display_mappings = false,
 	term_icon = "",
 }
 M.options = {}

@@ -1,19 +1,19 @@
 local M = {}
 
 local defaults = {
-	-- Key mappings bound inside the telescope window
-	mappings = {},
-	prompt_title = " Pick Term",
+	display_mappings = false,
+	mappings = {}, -- Key mappings bound inside the telescope window
 	preview_title = "Preview",
-	results_title = "Results",
+	prompt_title = " Pick Term",
 	results_format = {
 		"indicator",
 		"space",
 		"term_icon",
 		"term_name",
 	},
+	results_title = "Results",
+	search_field = "term_name",
 	separator = " ",
-	display_mappings = false,
 	term_icon = "",
 }
 M.options = {}

@@ -12,7 +12,7 @@ local status_ok, _ = pcall(require, "toggleterm")
 if not status_ok then
 	error("Cannot find toggleterm!")
 end
-local util = require("lib.util")
+local util = require("util")
 
 local M = {}
 M.open = function(opts)
@@ -51,23 +51,8 @@ M.open = function(opts)
 		local element = {
 			bufnr = bufnr,
 			flag = flag,
-			-- term_name = term_name,
-			-- changed = info.changed,
-			-- changedtick = info.changedtick,
-			-- hidden = info.hidden,
-			-- lastused = info.lastused,
-			-- linecount = info.linecount,
-			-- listed = info.listed,
-			-- lnum = info.lnum,
-			-- loaded = info.loaded,
-			-- name = info.name,
-			-- name = term_name,
 			term_name = term_name,
 			info = info,
-			-- windows = info.windows,
-			-- terminal_job_id = info.variables.terminal_job_id,
-			-- terminal_job_pid = info.variables.terminal_job_pid,
-			-- toggle_number = info.variables.toggle_number,
 		}
 		table.insert(buffers, element)
 	end

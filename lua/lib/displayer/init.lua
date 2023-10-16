@@ -79,7 +79,7 @@ local function results_formatter(opts)
 			bufnr = { bufnr_leading_spaces .. tostring(entry.bufnr), "TelescopeResultsNumber" },
 			indicator = { indicator_leading_spaces .. entry.indicator, "TelescopeResultsComment" },
 			term_icon = { term_icon, hl_group },
-			term_name = { entry.ordinal },
+			term_name = { entry.term_name },
 		}
 		process_results_config(displayer_table, displayer_col_vals)
 
@@ -94,14 +94,6 @@ function M.gen_displayer(opts)
 
 	local items, create_display_table = results_formatter(opts)
 
-	local disable_devicons = opts.disable_devicons
-
-	local icon_width = 0
-	if not disable_devicons then
-		local icon, _ = utils.get_devicons("fname", disable_devicons)
-		icon_width = strings.strdisplaywidth(icon)
-	end
-
 	local displayer = entry_display.create({
 		separator = config.separator,
 		items = items,
@@ -110,11 +102,6 @@ function M.gen_displayer(opts)
 	local cwd = vim.fn.expand(opts.cwd or vim.loop.cwd())
 
 	local make_display = function(entry)
-		-- max_bufnr_width + modes + icon + 3 spaces + : + lnum
-		-- opts.__prefix = opts.max_bufnr_width + 4 + icon_width + 3 + 1 + #tostring(entry.lnum)
-		-- TODO: make a conditional statement that calculates the prefix based on the user's results_format
-		opts.__prefix = opts.max_bufnr_width + 4 + icon_width + 3 + 1
-
 		return displayer(create_display_table(entry))
 	end
 
@@ -124,9 +111,6 @@ function M.gen_displayer(opts)
 		bufname = Path:new(bufname):normalize(cwd)
 
 		local hidden = entry.info.hidden == 1 and "h" or "a"
-		-- local readonly = vim.api.nvim_buf_get_option(entry.bufnr, "readonly") and "=" or " "
-		-- local changed = entry.info.changed == 1 and "+" or " "
-		-- local indicator = entry.flag .. hidden .. readonly .. changed
 		local indicator = entry.flag .. hidden
 		local lnum = 1
 
@@ -141,17 +125,23 @@ function M.gen_displayer(opts)
 			end
 		end
 
-		return make_entry.set_default_entry_mt({
-			-- value = bufname,
-			value = entry,
-			-- ordinal = entry.bufnr .. " : " .. bufname,
-			ordinal = entry.term_name, -- for filtering
-			display = make_display,
+		-- helper for mapping user config for search_field to the appropriate value
+		local ordinal_values = {
+			indicator = indicator,
+			term_name = entry.term_name,
+			bufnr = tostring(entry.bufnr),
+			bufname = bufname,
+		}
 
+		return make_entry.set_default_entry_mt({
+			value = entry,
+			ordinal = ordinal_values[config.search_field], -- for filtering in telescope search
+			display = make_display,
 			bufnr = entry.bufnr,
 			filename = bufname,
 			lnum = lnum,
 			indicator = indicator,
+			term_name = entry.term_name,
 		}, opts)
 	end
 end

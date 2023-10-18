@@ -82,7 +82,7 @@ M.open = function(opts)
 			sorter = conf.generic_sorter(opts),
 			attach_mappings = function(prompt_bufnr, map)
 				actions.select_default:replace(function()
-					actions.close(prompt_bufnr) -- close telescope
+					-- actions.close(prompt_bufnr) -- close telescope
 					local selection = actions_state.get_selected_entry()
 					if selection == nil then
 						return
@@ -97,9 +97,11 @@ M.open = function(opts)
 
 				-- mappings
 				local mappings = config.mappings
-				for keybind, action in pairs(mappings) do
+				for keybind, action_tbl in pairs(mappings) do
+					local action = action_tbl["action"]
+					local exit_on_action = action_tbl["exit_on_action"]
 					map("i", keybind, function()
-						action(prompt_bufnr)
+						action(prompt_bufnr, exit_on_action)
 					end)
 				end
 				return true

@@ -2,7 +2,7 @@ local M = {}
 
 local defaults = {
 	display_mappings = false,
-	mappings = {}, -- Key mappings bound inside the telescope window
+	mappings = {}, -- key mappings bound inside the telescope window
 	preview_title = "Preview",
 	prompt_title = " Pick Term",
 	results_format = {

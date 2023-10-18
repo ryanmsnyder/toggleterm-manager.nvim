@@ -75,7 +75,7 @@ local function results_formatter(opts)
 			or "" -- for right aligning bufnr column
 		local indicator_leading_spaces = opts.flag_exists and #entry.indicator == 1 and " " or "" -- for right aligning indicator column
 		local displayer_col_vals = {
-			bufname = { display_bufname },
+			bufname = { display_bufname, "TelescopeResultsIdentifier" },
 			bufnr = { bufnr_leading_spaces .. tostring(entry.bufnr), "TelescopeResultsNumber" },
 			indicator = { indicator_leading_spaces .. entry.indicator, "TelescopeResultsComment" },
 			term_icon = { term_icon, hl_group },

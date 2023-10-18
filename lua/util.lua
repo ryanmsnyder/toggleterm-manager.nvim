@@ -2,7 +2,7 @@ local M = {}
 
 local function_name_to_description = {
 	exit_terminal = "Quit term",
- 	rename_terminal = "Rename term",
+	rename_terminal = "Rename term",
 	-- Add other mappings as needed
 }
 
@@ -10,12 +10,13 @@ function M.format_results_title(mappings)
 	local telescope_toggleterm_actions = require("telescope-toggleterm").actions
 	local mapping_descriptions = {}
 
-	for k, v in pairs(mappings) do
-		local key = k:match("<(.-)>")
+	for mapping, action_tbl in pairs(mappings) do
+		local key = mapping:match("<(.-)>")
 		local func_name
+		local action = action_tbl["action"]
 
 		for action_name, action_func in pairs(telescope_toggleterm_actions) do
-			if v == action_func then
+			if action == action_func then
 				func_name = action_name
 				break
 			end

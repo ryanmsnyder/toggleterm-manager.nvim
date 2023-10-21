@@ -1,8 +1,8 @@
-local pickers, finders, actions, actions_state, conf
+local pickers, finders, telescope_actions, actions_state, conf
 if pcall(require, "telescope") then
 	pickers = require("telescope.pickers")
 	finders = require("telescope.finders")
-	actions = require("telescope.actions")
+	telescope_actions = require("telescope.actions")
 	actions_state = require("telescope.actions.state")
 	conf = require("telescope.config").values
 else
@@ -13,6 +13,7 @@ if not status_ok then
 	error("Cannot find toggleterm!")
 end
 local util = require("util")
+local actions = require("lib.actions")
 
 local M = {}
 M.open = function(opts)
@@ -22,9 +23,14 @@ M.open = function(opts)
 		return vim.api.nvim_buf_get_option(b, "filetype") == "toggleterm"
 	end, vim.api.nvim_list_bufs())
 
+	-- if not next(bufnrs) then
+	-- 	print("no terminal buffers are opened/hidden")
+	-- 	return
+	-- end
+
 	if not next(bufnrs) then
 		print("no terminal buffers are opened/hidden")
-		return
+		-- return
 	end
 
 	table.sort(bufnrs, function(a, b)
@@ -57,17 +63,18 @@ M.open = function(opts)
 		table.insert(buffers, element)
 	end
 
-	local max_toggleterm_name_length = math.max(unpack(term_name_lengths))
+	local max_toggleterm_name_length = #bufnrs > 0 and math.max(unpack(term_name_lengths))
 	entry_maker_opts.max_term_name_width = max_toggleterm_name_length
 
-	local max_bufnr = math.max(unpack(bufnrs))
+	local max_bufnr = #bufnrs > 0 and math.max(unpack(bufnrs))
 	entry_maker_opts.max_bufnr_width = #tostring(max_bufnr)
 
-	local max_bufname = math.max(unpack(bufname_lengths))
+	local max_bufname = #bufnrs > 0 and math.max(unpack(bufname_lengths))
 	entry_maker_opts.max_bufname_width = max_bufname
 
 	local displayer = require("lib.displayer").gen_displayer
 
+	-- local original_win_id = vim.api.nvim_get_current_win()
 	pickers
 		.new(opts, {
 			prompt_title = config.prompt_title,
@@ -81,29 +88,61 @@ M.open = function(opts)
 			}),
 			sorter = conf.generic_sorter(opts),
 			attach_mappings = function(prompt_bufnr, map)
-				actions.select_default:replace(function()
-					-- actions.close(prompt_bufnr) -- close telescope
-					local selection = actions_state.get_selected_entry()
-					if selection == nil then
-						return
+				local mappings = config.mappings
+				for mode, mode_mappings in pairs(mappings) do
+					for keybind, action_tbl in pairs(mode_mappings) do
+						local action = action_tbl["action"]
+						local exit_on_action = action_tbl["exit_on_action"]
+						map(mode, keybind, function()
+							action(prompt_bufnr, exit_on_action)
+						end)
 					end
-					local bufnr = tostring(selection.value.bufnr)
-					local toggle_number = selection.value.info.variables.toggle_number
-					require("toggleterm").toggle_command(bufnr, toggle_number)
-					vim.defer_fn(function()
-						vim.cmd("stopinsert")
-					end, 0)
+				end
+
+				telescope_actions.select_default:replace(function()
+					-- vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, true, true), "i", true)
+
+					-- actions.toggle_terminal(prompt_bufnr)
+					-- telescope_actions.close(prompt_bufnr) -- close telescope
+					-- local selection = actions_state.get_selected_entry()
+					-- if selection == nil then
+					-- 	return
+					-- end
+					-- local bufnr = tostring(selection.value.bufnr)
+					-- local toggle_number = selection.value.info.variables.toggle_number
+					-- require("toggleterm").toggle_command(bufnr, toggle_number)
+					--
+					-- --------------------------
+					-- local desktopPath = os.getenv("HOME") .. "/Desktop/new.txt"
+					-- local file, err = io.open(desktopPath, "a")
+					-- if not file then
+					-- 	print("Error opening file:", err)
+					-- 	return
+					-- end
+					-- file:write(vim.inspect(selection) .. "\n")
+					-- file:close()
+					-- -- selection.value:focus()
+					-- --------------------------
+					-- -- if selection.value:is_open() then
+					-- -- 	selection.value:focus()
+					-- -- else
+					-- -- 	selection.value:open()
+					-- -- end
+					--
+					-- vim.defer_fn(function()
+					-- 	vim.cmd("stopinsert")
+					-- end, 0)
 				end)
 
 				-- mappings
-				local mappings = config.mappings
-				for keybind, action_tbl in pairs(mappings) do
-					local action = action_tbl["action"]
-					local exit_on_action = action_tbl["exit_on_action"]
-					map("i", keybind, function()
-						action(prompt_bufnr, exit_on_action)
-					end)
-				end
+				-- local mappings = config.mappings
+				-- for keybind, action_tbl in pairs(mappings) do
+				-- 	local action = action_tbl["action"]
+				-- 	local exit_on_action = action_tbl["exit_on_action"]
+				-- 	map("i", keybind, function()
+				-- 		action(prompt_bufnr, exit_on_action)
+				-- 	end)
+				-- end
 				return true
 			end,
 		})

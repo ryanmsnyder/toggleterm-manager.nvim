@@ -1,7 +1,7 @@
 local M = {}
 
 local function_name_to_description = {
-	exit_terminal = "Quit term",
+	delete_terminal = "Delete term",
 	rename_terminal = "Rename term",
 	-- Add other mappings as needed
 }

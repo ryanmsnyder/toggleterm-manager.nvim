@@ -14,22 +14,71 @@ local function set_term_name(name, term)
 	term.display_name = name
 end
 
-function M.exit_terminal(prompt_bufnr)
-	local selection = actions_state.get_selected_entry()
-	if selection == nil then
-		return
-	end
-	local bufnr = selection.value.bufnr
+-- function M.exit_terminal(prompt_bufnr)
+-- 	local selection = actions_state.get_selected_entry()
+-- 	if selection == nil then
+-- 		return
+-- 	end
+-- 	local bufnr = selection.value.bufnr
+-- 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
+-- 	current_picker:delete_selection(function(selection)
+-- 		vim.api.nvim_buf_delete(bufnr, { force = true })
+-- 	end)
+-- end
+
+function M.new_terminal(prompt_bufnr, exit_on_action)
+	-- create terminal
+
 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
-	current_picker:delete_selection(function(selection)
-		vim.api.nvim_buf_delete(bufnr, { force = true })
-	end)
+	local current_row = current_picker:get_selection_row()
+
+	actions.close(prompt_bufnr)
+	local Terminal = require("toggleterm.terminal").Terminal
+	local term = Terminal:new({ hidden = false })
+	term:toggle()
+	--------------------------
+	-- local desktopPath = os.getenv("HOME") .. "/Desktop/debug.txt"
+	-- local file, err = io.open(desktopPath, "w")
+	-- if not file then
+	-- 	print("Error opening file:", err)
+	-- 	return
+	-- end
+	-- file:write(vim.inspect(term) .. "\n")
+	-- file:close()
+	--------------------------
+	if not exit_on_action then
+		vim.cmd("Telescope toggleterm")
+
+		-- require("telescope.builtin").resume()
+		-- open_telescope()
+		-- vim.cmd("Telescope resume")
+		-- current_picker:refresh
+	end
 end
 
 function M.delete_terminal(prompt_bufnr, exit_on_action)
 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
 	current_picker:delete_selection(function(selection)
-		vim.api.nvim_buf_delete(selection.bufnr, { force = true })
+		--------------------------
+		local desktopPath = os.getenv("HOME") .. "/Desktop/debug.txt"
+		local file, err = io.open(desktopPath, "w")
+		if not file then
+			print("Error opening file:", err)
+			return
+		end
+		file:write("prompt_bufnr:" .. prompt_bufnr .. "\n")
+		file:write(vim.inspect(selection) .. "\n")
+		--------------------------
+
+		-- vim.api.nvim_buf_delete(selection.bufnr, { force = true })
+		local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
+		file:write("force: " .. tostring(force) .. "\n")
+
+		local ok = pcall(vim.api.nvim_buf_delete, selection.bufnr, { force = force })
+
+		file:write("ok: " .. tostring(ok) .. "\n")
+		file:close()
+		return ok
 	end)
 
 	if exit_on_action then
@@ -77,6 +126,21 @@ function M.rename_terminal(prompt_bufnr, exit_on_action)
 			vim.cmd("echo ''") -- clear commandline
 		end
 	end)
+end
+
+function M.toggle_terminal(prompt_bufnr, exit_on_action)
+	actions.close(prompt_bufnr) -- close telescope
+	local selection = actions_state.get_selected_entry()
+	if selection == nil then
+		return
+	end
+	local bufnr = tostring(selection.value.bufnr)
+	local toggle_number = selection.value.info.variables.toggle_number
+	require("toggleterm").toggle_command(bufnr, toggle_number)
+
+	vim.defer_fn(function()
+		vim.cmd("stopinsert")
+	end, 0)
 end
 
 return M

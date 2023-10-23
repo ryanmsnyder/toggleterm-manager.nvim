@@ -14,67 +14,68 @@ if not status_ok then
 end
 local util = require("util")
 local actions = require("lib.actions")
+-- local config = require("config").options
 
 local M = {}
 M.open = function(opts)
 	local config = require("config").options
-
-	local bufnrs = vim.tbl_filter(function(b)
-		return vim.api.nvim_buf_get_option(b, "filetype") == "toggleterm"
-	end, vim.api.nvim_list_bufs())
-
+	--
+	-- local bufnrs = vim.tbl_filter(function(b)
+	-- 	return vim.api.nvim_buf_get_option(b, "filetype") == "toggleterm"
+	-- end, vim.api.nvim_list_bufs())
+	--
+	-- -- if not next(bufnrs) then
+	-- -- 	print("no terminal buffers are opened/hidden")
+	-- -- 	return
+	-- -- end
+	--
 	-- if not next(bufnrs) then
 	-- 	print("no terminal buffers are opened/hidden")
-	-- 	return
+	-- 	-- return
 	-- end
+	--
+	-- table.sort(bufnrs, function(a, b)
+	-- 	return vim.fn.getbufinfo(a)[1].lastused > vim.fn.getbufinfo(b)[1].lastused
+	-- end)
+	-- local entry_maker_opts = {}
+	-- local buffers = {}
+	-- local term_name_lengths = {}
+	-- local bufname_lengths = {}
+	-- for _, bufnr in ipairs(bufnrs) do
+	-- 	local info = vim.fn.getbufinfo(bufnr)[1]
+	-- 	local term_number = vim.api.nvim_buf_get_var(info.bufnr, "toggle_number")
+	-- 	local display_name = require("toggleterm.terminal").get(term_number, false).display_name
+	-- 	local term_name = display_name or tostring(term_number)
+	--
+	-- 	table.insert(term_name_lengths, #term_name)
+	-- 	table.insert(bufname_lengths, #info.name)
+	--
+	-- 	local flag = (bufnr == vim.fn.bufnr("") and "%") or (bufnr == vim.fn.bufnr("#") and "#" or "")
+	-- 	if flag ~= "" then
+	-- 		entry_maker_opts.flag_exists = true
+	-- 	end
+	--
+	-- 	local element = {
+	-- 		bufnr = bufnr,
+	-- 		flag = flag,
+	-- 		term_name = term_name,
+	-- 		info = info,
+	-- 	}
+	-- 	table.insert(buffers, element)
+	-- end
+	--
+	-- local max_toggleterm_name_length = #bufnrs > 0 and math.max(unpack(term_name_lengths))
+	-- entry_maker_opts.max_term_name_width = max_toggleterm_name_length
+	--
+	-- local max_bufnr = #bufnrs > 0 and math.max(unpack(bufnrs))
+	-- entry_maker_opts.max_bufnr_width = #tostring(max_bufnr)
+	--
+	-- local max_bufname = #bufnrs > 0 and math.max(unpack(bufname_lengths))
+	-- entry_maker_opts.max_bufname_width = max_bufname
 
-	if not next(bufnrs) then
-		print("no terminal buffers are opened/hidden")
-		-- return
-	end
+	-- local entry_maker_opts, buffers = util.prepare_data()
+	-- local displayer = require("lib.displayer").gen_displayer
 
-	table.sort(bufnrs, function(a, b)
-		return vim.fn.getbufinfo(a)[1].lastused > vim.fn.getbufinfo(b)[1].lastused
-	end)
-	local entry_maker_opts = {}
-	local buffers = {}
-	local term_name_lengths = {}
-	local bufname_lengths = {}
-	for _, bufnr in ipairs(bufnrs) do
-		local info = vim.fn.getbufinfo(bufnr)[1]
-		local term_number = vim.api.nvim_buf_get_var(info.bufnr, "toggle_number")
-		local display_name = require("toggleterm.terminal").get(term_number, false).display_name
-		local term_name = display_name or tostring(term_number)
-
-		table.insert(term_name_lengths, #term_name)
-		table.insert(bufname_lengths, #info.name)
-
-		local flag = (bufnr == vim.fn.bufnr("") and "%") or (bufnr == vim.fn.bufnr("#") and "#" or "")
-		if flag ~= "" then
-			entry_maker_opts.flag_exists = true
-		end
-
-		local element = {
-			bufnr = bufnr,
-			flag = flag,
-			term_name = term_name,
-			info = info,
-		}
-		table.insert(buffers, element)
-	end
-
-	local max_toggleterm_name_length = #bufnrs > 0 and math.max(unpack(term_name_lengths))
-	entry_maker_opts.max_term_name_width = max_toggleterm_name_length
-
-	local max_bufnr = #bufnrs > 0 and math.max(unpack(bufnrs))
-	entry_maker_opts.max_bufnr_width = #tostring(max_bufnr)
-
-	local max_bufname = #bufnrs > 0 and math.max(unpack(bufname_lengths))
-	entry_maker_opts.max_bufname_width = max_bufname
-
-	local displayer = require("lib.displayer").gen_displayer
-
-	-- local original_win_id = vim.api.nvim_get_current_win()
 	pickers
 		.new(opts, {
 			prompt_title = config.prompt_title,
@@ -82,10 +83,11 @@ M.open = function(opts)
 				or config.results_title,
 			preview_title = config.preview_title,
 			previewer = conf.grep_previewer(opts),
-			finder = finders.new_table({
-				results = buffers,
-				entry_maker = displayer(entry_maker_opts),
-			}),
+			-- finder = finders.new_table({
+			-- 	results = buffers,
+			-- 	entry_maker = displayer(entry_maker_opts),
+			-- }),
+			finder = util.create_finder(),
 			sorter = conf.generic_sorter(opts),
 			attach_mappings = function(prompt_bufnr, map)
 				local mappings = config.mappings

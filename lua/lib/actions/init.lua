@@ -8,10 +8,25 @@ if pcall(require, "telescope") then
 else
 	error("Cannot find telescope!")
 end
+local util = require("util")
+
 local M = {}
 
-local function set_term_name(name, term)
-	term.display_name = name
+local function focus_on_telescope(bufnr)
+	local file = io.open(os.getenv("HOME") .. "/Desktop/winid.txt", "a")
+	-- Go through all the windows
+	for _, win in ipairs(vim.api.nvim_list_wins()) do
+		-- Check if the window's buffer is the one we're looking for
+		if vim.api.nvim_win_get_buf(win) == bufnr then
+			-- Set focus to that window
+			file:write("telescope_win: " .. win .. "\n")
+
+			vim.api.nvim_set_current_win(win)
+			return
+		end
+	end
+	file:close()
+	print("Buffer not visible in any window")
 end
 
 -- function M.exit_terminal(prompt_bufnr)
@@ -129,18 +144,38 @@ function M.rename_terminal(prompt_bufnr, exit_on_action)
 end
 
 function M.toggle_terminal(prompt_bufnr, exit_on_action)
-	actions.close(prompt_bufnr) -- close telescope
+	local current_picker = require("telescope.actions.state").get_current_picker(prompt_bufnr)
+
 	local selection = actions_state.get_selected_entry()
 	if selection == nil then
 		return
 	end
+
 	local bufnr = tostring(selection.value.bufnr)
 	local toggle_number = selection.value.info.variables.toggle_number
-	require("toggleterm").toggle_command(bufnr, toggle_number)
 
-	vim.defer_fn(function()
-		vim.cmd("stopinsert")
-	end, 0)
+	if exit_on_action then
+		actions.close(prompt_bufnr) -- close telescope
+		require("toggleterm").toggle_command(bufnr, toggle_number)
+	else
+		-- prevent autocmds from running while executing toggle_command
+		-- this prevents the telescope prompt from automatically closing when a toggleterm terminal is toggled open,
+		-- which would normally move the focus to the terminal window, thereby closing the telescope prompt automatically
+		vim.cmd(string.format('noautocmd lua require("toggleterm").toggle_command("%s", %s)', bufnr, toggle_number))
+
+		-- the focus will be moved to the toggleterm window when toggle_command is called so we need to move the focus
+		-- back to the telescope prompt
+		focus_on_telescope(prompt_bufnr)
+
+		current_picker:refresh(util.create_finder(), { reset_prompt = false })
+	end
+
+	-- if the terminal was hidden and then toggled on, enter insert mode
+	if selection.value.info.hidden == 1 then
+		vim.defer_fn(function()
+			vim.cmd("startinsert")
+		end, 0)
+	end
 end
 
 return M

@@ -157,6 +157,13 @@ function M.toggle_terminal(prompt_bufnr, exit_on_action)
 	if exit_on_action then
 		actions.close(prompt_bufnr) -- close telescope
 		require("toggleterm").toggle_command(bufnr, toggle_number)
+
+		-- if the terminal was hidden and then toggled on, enter insert mode
+		if selection.value.info.hidden == 1 then
+			vim.defer_fn(function()
+				vim.cmd("startinsert")
+			end, 0)
+		end
 	else
 		-- prevent autocmds from running while executing toggle_command
 		-- this prevents the telescope prompt from automatically closing when a toggleterm terminal is toggled open,
@@ -168,13 +175,6 @@ function M.toggle_terminal(prompt_bufnr, exit_on_action)
 		focus_on_telescope(prompt_bufnr)
 
 		current_picker:refresh(util.create_finder(), { reset_prompt = false })
-	end
-
-	-- if the terminal was hidden and then toggled on, enter insert mode
-	if selection.value.info.hidden == 1 then
-		vim.defer_fn(function()
-			vim.cmd("startinsert")
-		end, 0)
 	end
 end
 

@@ -76,6 +76,11 @@ M.open = function(opts)
 	-- local entry_maker_opts, buffers = util.prepare_data()
 	-- local displayer = require("lib.displayer").gen_displayer
 
+	-- set origin window before opening telescope
+	-- some actions in lib.actions need to retrieve the origin window (get_origin_window) and this sets it
+
+	require("toggleterm.ui").set_origin_window()
+
 	pickers
 		.new(opts, {
 			prompt_title = config.prompt_title,

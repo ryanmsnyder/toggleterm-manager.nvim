@@ -44,8 +44,7 @@ function M.create_finder()
 	-- end
 
 	if not next(bufnrs) then
-		print("no terminal buffers are opened/hidden")
-		-- return
+		-- print("no terminal buffers are opened/hidden")
 	end
 
 	table.sort(bufnrs, function(a, b)

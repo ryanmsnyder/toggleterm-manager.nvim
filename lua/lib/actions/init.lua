@@ -12,21 +12,18 @@ local util = require("util")
 
 local M = {}
 
-local function focus_on_telescope(bufnr)
-	local file = io.open(os.getenv("HOME") .. "/Desktop/winid.txt", "a")
+local function focus_on_telescope(prompt_bufnr)
 	-- Go through all the windows
 	for _, win in ipairs(vim.api.nvim_list_wins()) do
 		-- Check if the window's buffer is the one we're looking for
-		if vim.api.nvim_win_get_buf(win) == bufnr then
+		if vim.api.nvim_win_get_buf(win) == prompt_bufnr then
 			-- Set focus to that window
-			file:write("telescope_win: " .. win .. "\n")
-
+			-- print(win)
 			vim.api.nvim_set_current_win(win)
 			return
 		end
 	end
-	file:close()
-	print("Buffer not visible in any window")
+	print("Telescope buffer not visible in any window")
 end
 
 -- function M.exit_terminal(prompt_bufnr)
@@ -41,34 +38,82 @@ end
 -- 	end)
 -- end
 
-function M.new_terminal(prompt_bufnr, exit_on_action)
-	-- create terminal
-
+-- function M.new_terminal(prompt_bufnr, exit_on_action)
+-- 	-- create terminal
+--
+-- 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
+-- 	local current_row = current_picker:get_selection_row()
+--
+-- 	actions.close(prompt_bufnr)
+-- 	local Terminal = require("toggleterm.terminal").Terminal
+-- 	local term = Terminal:new({ hidden = false })
+-- 	term:toggle()
+-- 	--------------------------
+-- 	-- local desktopPath = os.getenv("HOME") .. "/Desktop/debug.txt"
+-- 	-- local file, err = io.open(desktopPath, "w")
+-- 	-- if not file then
+-- 	-- 	print("Error opening file:", err)
+-- 	-- 	return
+-- 	-- end
+-- 	-- file:write(vim.inspect(term) .. "\n")
+-- 	-- file:close()
+-- 	--------------------------
+-- 	if not exit_on_action then
+-- 		vim.cmd("Telescope toggleterm")
+--
+-- 		-- require("telescope.builtin").resume()
+-- 		-- open_telescope()
+-- 		-- vim.cmd("Telescope resume")
+-- 		-- current_picker:refresh
+-- 	end
+-- end
+function M.create_terminal(prompt_bufnr, exit_on_action)
 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
-	local current_row = current_picker:get_selection_row()
 
-	actions.close(prompt_bufnr)
 	local Terminal = require("toggleterm.terminal").Terminal
-	local term = Terminal:new({ hidden = false })
-	term:toggle()
-	--------------------------
-	-- local desktopPath = os.getenv("HOME") .. "/Desktop/debug.txt"
-	-- local file, err = io.open(desktopPath, "w")
-	-- if not file then
-	-- 	print("Error opening file:", err)
-	-- 	return
-	-- end
-	-- file:write(vim.inspect(term) .. "\n")
-	-- file:close()
-	--------------------------
-	if not exit_on_action then
-		vim.cmd("Telescope toggleterm")
 
-		-- require("telescope.builtin").resume()
-		-- open_telescope()
-		-- vim.cmd("Telescope resume")
-		-- current_picker:refresh
+	local term = Terminal:new({
+		-- called when the terminal is opened in any way (i.e. term:open())
+		on_open = function(term)
+			if not exit_on_action then
+				vim.schedule(function()
+					-- set origin window to current term before switching back to telescope
+					-- this ensures the cursor is moved to the correct term window after closing a term
+					require("toggleterm.ui").set_origin_window()
+					focus_on_telescope(prompt_bufnr)
+					current_picker:refresh(util.create_finder(), { reset_prompt = false })
+
+					vim.api.nvim_create_augroup("InsertOnPickerLeave", {})
+					vim.api.nvim_create_autocmd("BufLeave", {
+						buffer = prompt_bufnr,
+						group = "InsertOnPickerLeave",
+						nested = true,
+						once = true,
+						callback = function()
+							vim.schedule(function()
+								vim.cmd("startinsert!")
+							end)
+						end,
+					})
+				end)
+			end
+		end,
+	})
+
+	if exit_on_action then
+		actions.close(prompt_bufnr)
+		vim.schedule(function()
+			vim.cmd("startinsert!")
+		end)
+	else
+		local window = require("toggleterm.ui").get_origin_window()
+		vim.cmd(string.format("noautocmd lua vim.api.nvim_set_current_win(%s)", window))
 	end
+	term:open()
+
+	-- update the telescope picker's original window id to the term window id that was just created
+	-- this ensures that when telescope is exited manually, the cursor returns to the most recent terminal created
+	current_picker.original_win_id = term.window
 end
 
 function M.delete_terminal(prompt_bufnr, exit_on_action)

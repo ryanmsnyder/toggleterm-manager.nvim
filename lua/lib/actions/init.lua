@@ -72,9 +72,21 @@ function M.create_terminal(prompt_bufnr, exit_on_action)
 
 	local Terminal = require("toggleterm.terminal").Terminal
 
-	local term = Terminal:new({
+	local term
+	term = Terminal:new({
 		-- called when the terminal is opened in any way (i.e. term:open())
-		on_open = function(term)
+		on_open = function()
+			--------------------------
+			local desktopPath = os.getenv("HOME") .. "/Desktop/debug.txt"
+			local file, err = io.open(desktopPath, "a")
+			if not file then
+				print("Error opening file:", err)
+				return
+			end
+			file:write(tostring(exit_on_action) .. "\n")
+			file:write("prompt_bufnr: " .. prompt_bufnr .. "\n")
+			file:close()
+			--------------------------
 			if not exit_on_action then
 				vim.schedule(function()
 					-- set origin window to current term before switching back to telescope
@@ -95,6 +107,10 @@ function M.create_terminal(prompt_bufnr, exit_on_action)
 							end)
 						end,
 					})
+
+					-- remove on_open callback after it's used to prevent side effects when opening the terminal
+					-- in other actions
+					term.on_open = nil
 				end)
 			end
 		end,
@@ -203,6 +219,17 @@ function M.toggle_terminal(prompt_bufnr, exit_on_action)
 		actions.close(prompt_bufnr) -- close telescope
 		require("toggleterm").toggle_command(bufnr, toggle_number)
 
+		-- selection:toggle()
+		------------------------
+		local desktopPath = os.getenv("HOME") .. "/Desktop/debug.txt"
+		local file, err = io.open(desktopPath, "a")
+		if not file then
+			print("Error opening file:", err)
+			return
+		end
+		file:write("test:\n" .. vim.inspect(selection) .. "\n")
+		file:close()
+		------------------------
 		-- if the terminal was hidden and then toggled on, enter insert mode
 		if selection.value.info.hidden == 1 then
 			vim.defer_fn(function()

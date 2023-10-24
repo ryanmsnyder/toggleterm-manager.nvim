@@ -89,7 +89,7 @@ local function results_formatter(opts)
 	return items, display_formatter
 end
 
-function M.gen_displayer(opts)
+function M.displayer(opts)
 	opts = opts or {}
 
 	local items, create_display_table = results_formatter(opts)

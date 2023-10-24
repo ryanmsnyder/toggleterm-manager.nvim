@@ -19,66 +19,8 @@ local actions = require("lib.actions")
 local M = {}
 M.open = function(opts)
 	local config = require("config").options
-	--
-	-- local bufnrs = vim.tbl_filter(function(b)
-	-- 	return vim.api.nvim_buf_get_option(b, "filetype") == "toggleterm"
-	-- end, vim.api.nvim_list_bufs())
-	--
-	-- -- if not next(bufnrs) then
-	-- -- 	print("no terminal buffers are opened/hidden")
-	-- -- 	return
-	-- -- end
-	--
-	-- if not next(bufnrs) then
-	-- 	print("no terminal buffers are opened/hidden")
-	-- 	-- return
-	-- end
-	--
-	-- table.sort(bufnrs, function(a, b)
-	-- 	return vim.fn.getbufinfo(a)[1].lastused > vim.fn.getbufinfo(b)[1].lastused
-	-- end)
-	-- local entry_maker_opts = {}
-	-- local buffers = {}
-	-- local term_name_lengths = {}
-	-- local bufname_lengths = {}
-	-- for _, bufnr in ipairs(bufnrs) do
-	-- 	local info = vim.fn.getbufinfo(bufnr)[1]
-	-- 	local term_number = vim.api.nvim_buf_get_var(info.bufnr, "toggle_number")
-	-- 	local display_name = require("toggleterm.terminal").get(term_number, false).display_name
-	-- 	local term_name = display_name or tostring(term_number)
-	--
-	-- 	table.insert(term_name_lengths, #term_name)
-	-- 	table.insert(bufname_lengths, #info.name)
-	--
-	-- 	local flag = (bufnr == vim.fn.bufnr("") and "%") or (bufnr == vim.fn.bufnr("#") and "#" or "")
-	-- 	if flag ~= "" then
-	-- 		entry_maker_opts.flag_exists = true
-	-- 	end
-	--
-	-- 	local element = {
-	-- 		bufnr = bufnr,
-	-- 		flag = flag,
-	-- 		term_name = term_name,
-	-- 		info = info,
-	-- 	}
-	-- 	table.insert(buffers, element)
-	-- end
-	--
-	-- local max_toggleterm_name_length = #bufnrs > 0 and math.max(unpack(term_name_lengths))
-	-- entry_maker_opts.max_term_name_width = max_toggleterm_name_length
-	--
-	-- local max_bufnr = #bufnrs > 0 and math.max(unpack(bufnrs))
-	-- entry_maker_opts.max_bufnr_width = #tostring(max_bufnr)
-	--
-	-- local max_bufname = #bufnrs > 0 and math.max(unpack(bufname_lengths))
-	-- entry_maker_opts.max_bufname_width = max_bufname
 
-	-- local entry_maker_opts, buffers = util.prepare_data()
-	-- local displayer = require("lib.displayer").gen_displayer
-
-	-- set origin window before opening telescope
-	-- some actions in lib.actions need to retrieve the origin window (get_origin_window) and this sets it
-
+	-- set origin window, which will need to be retrieved in some actions (actions/init.lua)
 	require("toggleterm.ui").set_origin_window()
 
 	pickers

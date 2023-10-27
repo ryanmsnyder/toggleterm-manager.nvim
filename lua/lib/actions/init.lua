@@ -58,8 +58,7 @@ function M.create_terminal(prompt_bufnr, exit_on_action)
 			vim.cmd("startinsert!")
 		end)
 	else
-		local window = require("toggleterm.ui").get_origin_window()
-		vim.cmd(string.format("noautocmd lua vim.api.nvim_set_current_win(%s)", window))
+		util.focus_on_origin_win()
 	end
 	term:open()
 
@@ -81,20 +80,29 @@ function M.delete_terminal(prompt_bufnr, exit_on_action)
 		file:write("prompt_bufnr:" .. prompt_bufnr .. "\n")
 		file:write(vim.inspect(selection) .. "\n")
 		--------------------------
+		local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
+		if exit_on_action then
+			actions.close(prompt_bufnr)
+			vim.api.nvim_buf_delete(selection.bufnr, { force = force })
+			return
+		end
+
+		util.focus_on_origin_win()
 
 		-- vim.api.nvim_buf_delete(selection.bufnr, { force = true })
-		local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
-		file:write("force: " .. tostring(force) .. "\n")
-
+		-- local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
 		local ok = pcall(vim.api.nvim_buf_delete, selection.bufnr, { force = force })
 
+		toggleterm_ui.set_origin_window()
+
+		focus_on_telescope(prompt_bufnr)
+		-- current_picker:refresh(util.create_finder(false), { reset_prompt = false })
 		file:write("ok: " .. tostring(ok) .. "\n")
 		file:close()
 		return ok
 	end)
 
 	if exit_on_action then
-		actions.close(prompt_bufnr)
 	end
 end
 
@@ -146,8 +154,7 @@ function M.toggle_terminal(prompt_bufnr, exit_on_action)
 
 	local term = selection.value
 
-	local window = toggleterm_ui.get_origin_window()
-	vim.cmd(string.format("noautocmd lua vim.api.nvim_set_current_win(%s)", window))
+	util.focus_on_origin_win()
 	-- toggleterm_ui.set_origin_window()
 	if term:is_open() then
 		term:close()

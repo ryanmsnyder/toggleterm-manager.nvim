@@ -122,14 +122,10 @@ M.open = function(opts)
 				local win_is_valid = vim.api.nvim_win_is_valid(picker.original_win_id)
 				if win_is_valid then
 					local picker_orig_win_bufnr = vim.fn.winbufnr(picker.original_win_id)
-					print(picker_orig_win_bufnr)
 					local buftype = vim.api.nvim_buf_get_option(picker_orig_win_bufnr, "filetype")
-					-- print(buftype)
 					if buftype == "toggleterm" then
 						vim.cmd("startinsert!")
 					end
-				end
-				if vim.bo.ft == "toggleterm" then
 				end
 			end)
 		end,

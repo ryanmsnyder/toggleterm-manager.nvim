@@ -1,7 +1,7 @@
 local finders = require("telescope.finders")
+local toggleterm = require("toggleterm.terminal")
 
 local M = {}
-
 local function_name_to_description = {
 	toggle_terminal = "Toggle term",
 	create_terminal = "Create term",
@@ -10,136 +10,73 @@ local function_name_to_description = {
 }
 
 function M.format_results_title(mappings)
-	local telescope_toggleterm_actions = require("telescope-toggleterm").actions
+	local actions = require("telescope-toggleterm").actions
 	local mapping_descriptions = {}
 
 	for mapping, action_tbl in pairs(mappings) do
 		local key = mapping:match("<(.-)>")
-		local func_name
 		local action = action_tbl["action"]
-
-		for action_name, action_func in pairs(telescope_toggleterm_actions) do
-			if action == action_func then
-				func_name = action_name
-				break
-			end
-		end
+		local func_name = next(vim.tbl_filter(function(val)
+			return val == action
+		end, actions))
 
 		if func_name and function_name_to_description[func_name] then
-			local description = string.format("%s: %s", key, function_name_to_description[func_name])
-			table.insert(mapping_descriptions, description)
+			table.insert(mapping_descriptions, string.format("%s: %s", key, function_name_to_description[func_name]))
 		end
 	end
 
 	return table.concat(mapping_descriptions, "  ")
 end
 
-function M.create_finder()
-	local bufnrs = vim.tbl_filter(function(b)
-		return vim.api.nvim_buf_get_option(b, "filetype") == "toggleterm"
-	end, vim.api.nvim_list_bufs())
+function M.create_finder(sort)
+	local terms = toggleterm.get_all(true)
+	local entry_maker_opts = {}
+	local bufnrs, term_name_lengths, bufname_lengths, buffers = {}, {}, {}, {}
 
-	if not next(bufnrs) then
-		-- print("no terminal buffers are opened/hidden")
+	if sort then
+		table.sort(terms, function(a, b)
+			return vim.fn.getbufinfo(a.bufnr)[1].lastused > vim.fn.getbufinfo(b.bufnr)[1].lastused
+		end)
 	end
 
-	table.sort(bufnrs, function(a, b)
-		return vim.fn.getbufinfo(a)[1].lastused > vim.fn.getbufinfo(b)[1].lastused
-	end)
-	local entry_maker_opts = {}
-	local buffers = {}
-	local term_name_lengths = {}
-	local bufname_lengths = {}
-	for _, bufnr in ipairs(bufnrs) do
-		local info = vim.fn.getbufinfo(bufnr)[1]
-		local term_number = vim.api.nvim_buf_get_var(info.bufnr, "toggle_number")
-		local display_name = require("toggleterm.terminal").get(term_number, false).display_name
-		local term_name = display_name or tostring(term_number)
+	for _, term in ipairs(terms) do
+		local info = vim.fn.getbufinfo(term.bufnr)[1]
+		local term_name = term.display_name or tostring(term.id)
+		local flag = (term.bufnr == vim.fn.bufnr("") and "%") or (term.bufnr == vim.fn.bufnr("#") and "#" or "")
 
+		table.insert(bufnrs, term.bufnr)
 		table.insert(term_name_lengths, #term_name)
 		table.insert(bufname_lengths, #info.name)
-
-		local flag = (bufnr == vim.fn.bufnr("") and "%") or (bufnr == vim.fn.bufnr("#") and "#" or "")
 		if flag ~= "" then
 			entry_maker_opts.flag_exists = true
 		end
 
-		local element = {
-			bufnr = bufnr,
-			flag = flag,
-			term_name = term_name,
-			info = info,
-		}
-		table.insert(buffers, element)
+		term.info, term.flag, term.term_name = info, flag, term_name
+		table.insert(buffers, term)
 	end
 
-	local max_toggleterm_name_length = #bufnrs > 0 and math.max(unpack(term_name_lengths))
-	entry_maker_opts.max_term_name_width = max_toggleterm_name_length
-
-	local max_bufnr = #bufnrs > 0 and math.max(unpack(bufnrs))
-	entry_maker_opts.max_bufnr_width = #tostring(max_bufnr)
-
-	local max_bufname = #bufnrs > 0 and math.max(unpack(bufname_lengths))
-	entry_maker_opts.max_bufname_width = max_bufname
-
-	local displayer = require("lib.displayer").displayer
+	entry_maker_opts.max_term_name_width = #terms > 0 and math.max(unpack(term_name_lengths))
+	entry_maker_opts.max_bufnr_width = #terms > 0 and #tostring(math.max(unpack(bufnrs)))
+	entry_maker_opts.max_bufname_width = #terms > 0 and math.max(unpack(bufname_lengths))
 
 	return finders.new_table({
 		results = buffers,
-		entry_maker = displayer(entry_maker_opts),
+		entry_maker = require("lib.displayer").displayer(entry_maker_opts),
 	})
 end
 
--- function M.prepare_data()
--- 	local bufnrs = vim.tbl_filter(function(b)
--- 		return vim.api.nvim_buf_get_option(b, "filetype") == "toggleterm"
--- 	end, vim.api.nvim_list_bufs())
---
--- 	if not next(bufnrs) then
--- 		print("no terminal buffers are opened/hidden")
--- 	end
---
--- 	table.sort(bufnrs, function(a, b)
--- 		return vim.fn.getbufinfo(a)[1].lastused > vim.fn.getbufinfo(b)[1].lastused
--- 	end)
--- 	local entry_maker_opts = {}
--- 	local buffers = {}
--- 	local term_name_lengths = {}
--- 	local bufname_lengths = {}
--- 	for _, bufnr in ipairs(bufnrs) do
--- 		local info = vim.fn.getbufinfo(bufnr)[1]
--- 		local term_number = vim.api.nvim_buf_get_var(info.bufnr, "toggle_number")
--- 		local display_name = require("toggleterm.terminal").get(term_number, false).display_name
--- 		local term_name = display_name or tostring(term_number)
---
--- 		table.insert(term_name_lengths, #term_name)
--- 		table.insert(bufname_lengths, #info.name)
---
--- 		local flag = (bufnr == vim.fn.bufnr("") and "%") or (bufnr == vim.fn.bufnr("#") and "#" or "")
--- 		if flag ~= "" then
--- 			entry_maker_opts.flag_exists = true
--- 		end
---
--- 		local element = {
--- 			bufnr = bufnr,
--- 			flag = flag,
--- 			term_name = term_name,
--- 			info = info,
--- 		}
--- 		table.insert(buffers, element)
--- 	end
---
--- 	local max_toggleterm_name_length = #bufnrs > 0 and math.max(unpack(term_name_lengths))
--- 	entry_maker_opts.max_term_name_width = max_toggleterm_name_length
---
--- 	local max_bufnr = #bufnrs > 0 and math.max(unpack(bufnrs))
--- 	entry_maker_opts.max_bufnr_width = #tostring(max_bufnr)
---
--- 	local max_bufname = #bufnrs > 0 and math.max(unpack(bufname_lengths))
--- 	entry_maker_opts.max_bufname_width = max_bufname
---
--- 	-- Return the values that will be used in the open function
--- 	return entry_maker_opts, buffers
--- end
+-- registering a callback is necessary to call set_selection (which is used to keep the selection on the entry
+-- that was just renamed in this case) after calling the refresh method. Otherwise, because of the async behavior
+-- of refresh, set_selection will be called before the refresh is complete and the selection will just move
+-- to the first entry
+function M.set_selection_row(picker)
+	local current_row = picker:get_selection_row()
+
+	local callbacks = { unpack(picker._completion_callbacks) } -- shallow copy
+	picker:register_completion_callback(function(self)
+		self:set_selection(current_row)
+		self._completion_callbacks = callbacks
+	end)
+end
 
 return M

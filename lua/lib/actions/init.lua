@@ -8,6 +8,7 @@ if pcall(require, "telescope") then
 else
 	error("Cannot find telescope!")
 end
+local toggleterm_ui = require("toggleterm.ui")
 local util = require("util")
 
 local M = {}
@@ -26,47 +27,6 @@ local function focus_on_telescope(prompt_bufnr)
 	print("Telescope buffer not visible in any window")
 end
 
--- function M.exit_terminal(prompt_bufnr)
--- 	local selection = actions_state.get_selected_entry()
--- 	if selection == nil then
--- 		return
--- 	end
--- 	local bufnr = selection.value.bufnr
--- 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
--- 	current_picker:delete_selection(function(selection)
--- 		vim.api.nvim_buf_delete(bufnr, { force = true })
--- 	end)
--- end
-
--- function M.new_terminal(prompt_bufnr, exit_on_action)
--- 	-- create terminal
---
--- 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
--- 	local current_row = current_picker:get_selection_row()
---
--- 	actions.close(prompt_bufnr)
--- 	local Terminal = require("toggleterm.terminal").Terminal
--- 	local term = Terminal:new({ hidden = false })
--- 	term:toggle()
--- 	--------------------------
--- 	-- local desktopPath = os.getenv("HOME") .. "/Desktop/debug.txt"
--- 	-- local file, err = io.open(desktopPath, "w")
--- 	-- if not file then
--- 	-- 	print("Error opening file:", err)
--- 	-- 	return
--- 	-- end
--- 	-- file:write(vim.inspect(term) .. "\n")
--- 	-- file:close()
--- 	--------------------------
--- 	if not exit_on_action then
--- 		vim.cmd("Telescope toggleterm")
---
--- 		-- require("telescope.builtin").resume()
--- 		-- open_telescope()
--- 		-- vim.cmd("Telescope resume")
--- 		-- current_picker:refresh
--- 	end
--- end
 function M.create_terminal(prompt_bufnr, exit_on_action)
 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
 
@@ -76,37 +36,13 @@ function M.create_terminal(prompt_bufnr, exit_on_action)
 	term = Terminal:new({
 		-- called when the terminal is opened in any way (i.e. term:open())
 		on_open = function()
-			--------------------------
-			local desktopPath = os.getenv("HOME") .. "/Desktop/debug.txt"
-			local file, err = io.open(desktopPath, "a")
-			if not file then
-				print("Error opening file:", err)
-				return
-			end
-			file:write(tostring(exit_on_action) .. "\n")
-			file:write("prompt_bufnr: " .. prompt_bufnr .. "\n")
-			file:close()
-			--------------------------
 			if not exit_on_action then
 				vim.schedule(function()
 					-- set origin window to current term before switching back to telescope
 					-- this ensures the cursor is moved to the correct term window after closing a term
-					require("toggleterm.ui").set_origin_window()
+					toggleterm_ui.set_origin_window()
 					focus_on_telescope(prompt_bufnr)
-					current_picker:refresh(util.create_finder(), { reset_prompt = false })
-
-					vim.api.nvim_create_augroup("InsertOnPickerLeave", {})
-					vim.api.nvim_create_autocmd("BufLeave", {
-						buffer = prompt_bufnr,
-						group = "InsertOnPickerLeave",
-						nested = true,
-						once = true,
-						callback = function()
-							vim.schedule(function()
-								vim.cmd("startinsert!")
-							end)
-						end,
-					})
+					current_picker:refresh(util.create_finder(false), { reset_prompt = false })
 
 					-- remove on_open callback after it's used to prevent side effects when opening the terminal
 					-- in other actions
@@ -168,10 +104,9 @@ function M.rename_terminal(prompt_bufnr, exit_on_action)
 		return
 	end
 
-	local toggle_number = selection.value.info.variables.toggle_number
-	local term = require("toggleterm.terminal").get(toggle_number, false)
+	local term = selection.value
 
-	local prompt = string.format("Rename terminal %s: ", term.display_name or toggle_number)
+	local prompt = string.format("Rename terminal %s: ", selection.term_name)
 	vim.ui.input({ prompt = prompt }, function(name)
 		if name and #name > 0 then
 			-- rename terminal within toggleterm
@@ -180,13 +115,10 @@ function M.rename_terminal(prompt_bufnr, exit_on_action)
 			if exit_on_action then
 				actions.close(prompt_bufnr)
 			else
-				-- refresh name within telescope results
-				selection.term_name = name
-				selection.ordinal = name
-
 				local current_picker = actions_state.get_current_picker(prompt_bufnr)
 				local current_row = current_picker:get_selection_row()
-				current_picker:refresh(current_picker.finder, { reset_prompt = false })
+				-- current_picker:refresh(current_picker.finder, { reset_prompt = false })
+				current_picker:refresh(util.create_finder(false), { reset_prompt = false })
 
 				-- registering a callback is necessary to call set_selection (which is used to keep the selection on the entry
 				-- that was just renamed in this case) after calling the refresh method. Otherwise, because of the async behavior
@@ -212,42 +144,25 @@ function M.toggle_terminal(prompt_bufnr, exit_on_action)
 		return
 	end
 
-	local bufnr = tostring(selection.value.bufnr)
-	local toggle_number = selection.value.info.variables.toggle_number
+	local term = selection.value
 
-	if exit_on_action then
-		actions.close(prompt_bufnr) -- close telescope
-		require("toggleterm").toggle_command(bufnr, toggle_number)
-
-		-- selection:toggle()
-		------------------------
-		local desktopPath = os.getenv("HOME") .. "/Desktop/debug.txt"
-		local file, err = io.open(desktopPath, "a")
-		if not file then
-			print("Error opening file:", err)
-			return
-		end
-		file:write("test:\n" .. vim.inspect(selection) .. "\n")
-		file:close()
-		------------------------
-		-- if the terminal was hidden and then toggled on, enter insert mode
-		if selection.value.info.hidden == 1 then
-			vim.defer_fn(function()
-				vim.cmd("startinsert")
-			end, 0)
-		end
+	local window = toggleterm_ui.get_origin_window()
+	vim.cmd(string.format("noautocmd lua vim.api.nvim_set_current_win(%s)", window))
+	-- toggleterm_ui.set_origin_window()
+	if term:is_open() then
+		term:close()
 	else
-		-- prevent autocmds from running while executing toggle_command
-		-- this prevents the telescope prompt from automatically closing when a toggleterm terminal is toggled open,
-		-- which would normally move the focus to the terminal window, thereby closing the telescope prompt automatically
-		vim.cmd(string.format('noautocmd lua require("toggleterm").toggle_command("%s", %s)', bufnr, toggle_number))
-
-		-- the focus will be moved to the toggleterm window when toggle_command is called so we need to move the focus
-		-- back to the telescope prompt
-		focus_on_telescope(prompt_bufnr)
-
-		current_picker:refresh(util.create_finder(), { reset_prompt = false })
+		function open_term()
+			term:open()
+		end
+		vim.cmd("noautocmd lua open_term()")
 	end
+
+	focus_on_telescope(prompt_bufnr)
+	current_picker:refresh(util.create_finder(false), { reset_prompt = false })
+	util.set_selection_row(current_picker)
+
+	current_picker.original_win_id = term.window
 end
 
 return M

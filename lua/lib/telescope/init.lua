@@ -47,7 +47,7 @@ M.open = function(opts)
 		-- 	results = buffers,
 		-- 	entry_maker = displayer(entry_maker_opts),
 		-- }),
-		finder = util.create_finder(),
+		finder = util.create_finder(true),
 		sorter = conf.generic_sorter(opts),
 		attach_mappings = function(prompt_bufnr, map)
 			local mappings = config.mappings

@@ -89,4 +89,18 @@ function M.focus_on_origin_win()
 	vim.cmd(string.format("noautocmd lua vim.api.nvim_set_current_win(%s)", window))
 end
 
+function M.focus_on_telescope(prompt_bufnr)
+	-- Go through all the windows
+	for _, win in ipairs(vim.api.nvim_list_wins()) do
+		-- Check if the window's buffer is the one we're looking for
+		if vim.api.nvim_win_get_buf(win) == prompt_bufnr then
+			-- Set focus to that window
+			-- print(win)
+			vim.api.nvim_set_current_win(win)
+			return
+		end
+	end
+	print("Telescope buffer not visible in any window")
+end
+
 return M

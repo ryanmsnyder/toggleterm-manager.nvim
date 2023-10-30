@@ -1,6 +1,7 @@
 local finders = require("telescope.finders")
 local toggleterm = require("toggleterm.terminal")
 local toggleterm_ui = require("toggleterm.ui")
+local Path = require("plenary.path")
 
 local M = {}
 local function_name_to_description = {
@@ -41,13 +42,30 @@ function M.get_terminals()
 	local entry_maker_opts = {}
 	local term_name_lengths, bufname_lengths = {}, {}
 
+	local cwd = vim.fn.expand(vim.loop.cwd())
+
 	for _, bufnr in ipairs(bufnrs) do
 		local id = vim.api.nvim_buf_get_var(bufnr, "toggle_number")
 		local term = toggleterm.get(id)
 
+		local desktopPath = os.getenv("HOME") .. "/Desktop/new.txt"
+		local file, err = io.open(desktopPath, "w")
+		if not file then
+			print("Error opening file:", err)
+			return
+		end
+		file:write(vim.inspect(vim.fn.getbufinfo(term.bufnr)) .. "\n")
+		file:close()
 		local info = vim.fn.getbufinfo(term.bufnr)[1]
-		local term_name = term.display_name or tostring(term.id)
+
 		local flag = (term.bufnr == vim.fn.bufnr("") and "%") or (term.bufnr == vim.fn.bufnr("#") and "#" or "")
+		local hidden = info.hidden == 1 and "h" or "a"
+		local indicator = flag .. hidden
+
+		local term_name = term.display_name or tostring(term.id)
+
+		local bufname = info.name ~= "" and info.name or "No Name"
+		bufname = Path:new(bufname):normalize(cwd) -- if bufname is inside the cwd, trim that part of the string
 
 		table.insert(term_name_lengths, #term_name)
 		table.insert(bufname_lengths, #info.name)
@@ -56,7 +74,7 @@ function M.get_terminals()
 			entry_maker_opts.flag_exists = true
 		end
 
-		term.info, term.flag, term.term_name = info, flag, term_name
+		term._info, term._indicator, term._term_name, term._bufname = info, indicator, term_name, bufname
 		table.insert(terminals, term)
 	end
 
@@ -72,26 +90,33 @@ function M.create_finder(cur_row_term_id)
 	local terms, entry_maker_opts = M.get_terminals()
 
 	local new_row_num
-	if #terms > 0 then
+	if terms and #terms > 0 then
 		local sort_field = config.sort.field
 		local ascending = config.sort.ascending
 		local sort_funcs = {
-			bufname = function(a, b) end,
 			bufnr = function(a, b)
 				if ascending then
 					return a.bufnr < b.bufnr
 				end
 				return a.bufnr > b.bufnr
 			end,
-			creation = function(a, b) end,
+			indicator = function(a, b)
+				if ascending then
+					return a._indicator < b._indicator
+				end
+				return a._indicator > b._indicator
+			end,
 			lastused = function(a, b)
 				if ascending then
-					return a.info.lastused > b.info.lastused
+					return a._info.lastused < b._info.lastused
 				end
-				return a.info.lastused < b.info.lastused
+				return a._info.lastused > b._info.lastused
 			end,
 			term_name = function(a, b)
-				return a.term_name < b.term_name
+				if ascending then
+					return a._term_name < b._term_name
+				end
+				return a._term_name > b._term_name
 			end,
 		}
 
@@ -148,6 +173,10 @@ function M.focus_on_telescope(prompt_bufnr)
 		end
 	end
 	print("Telescope buffer not visible in any window")
+end
+
+function M.clear_command_line()
+	vim.cmd("echo ''")
 end
 
 return M

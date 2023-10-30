@@ -28,7 +28,10 @@ function M.create_terminal(prompt_bufnr, exit_on_action)
 					-- this ensures the cursor is moved to the correct term window after closing a term
 					toggleterm_ui.set_origin_window()
 					util.focus_on_telescope(prompt_bufnr)
-					current_picker:refresh(util.create_finder(), { reset_prompt = false })
+					local finder, new_row_number = util.create_finder(term.id)
+					current_picker:refresh(finder, { reset_prompt = false })
+
+					util.set_selection_row(current_picker, new_row_number)
 
 					-- remove on_open callback after it's used to prevent side effects when opening the terminal
 					-- in other actions
@@ -84,6 +87,7 @@ function M.rename_terminal(prompt_bufnr, exit_on_action)
 
 	local prompt = string.format("Rename terminal %s: ", selection.term_name)
 	vim.ui.input({ prompt = prompt }, function(name)
+		util.clear_command_line()
 		if name and #name > 0 then
 			-- rename terminal within toggleterm
 			term.display_name = name
@@ -97,8 +101,6 @@ function M.rename_terminal(prompt_bufnr, exit_on_action)
 
 				util.set_selection_row(current_picker, new_row_number)
 			end
-
-			vim.cmd("echo ''") -- clear commandline
 		end
 	end)
 end
@@ -125,8 +127,10 @@ function M.toggle_terminal(prompt_bufnr, exit_on_action)
 	end
 
 	util.focus_on_telescope(prompt_bufnr)
-	current_picker:refresh(util.create_finder(), { reset_prompt = false })
-	util.set_selection_row(current_picker)
+	local finder, new_row_number = util.create_finder(term.id)
+	current_picker:refresh(finder, { reset_prompt = false })
+
+	util.set_selection_row(current_picker, new_row_number)
 
 	current_picker.original_win_id = term.window
 end
@@ -137,6 +141,7 @@ function M.create_and_name_terminal(prompt_bufnr, exit_on_action)
 	local prompt = "Name terminal: "
 
 	vim.ui.input({ prompt = prompt }, function(name)
+		util.clear_command_line()
 		if name and #name > 0 then
 			local Terminal = require("toggleterm.terminal").Terminal
 
@@ -156,7 +161,6 @@ function M.create_and_name_terminal(prompt_bufnr, exit_on_action)
 							current_picker:refresh(finder, { reset_prompt = false })
 
 							util.set_selection_row(current_picker, new_row_number)
-							vim.cmd("echo ''") -- clear commandline
 
 							-- remove on_open callback after it's used to prevent side effects when opening the terminal
 							-- in other actions

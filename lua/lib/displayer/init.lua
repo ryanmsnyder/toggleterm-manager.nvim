@@ -1,7 +1,6 @@
 local entry_display = require("telescope.pickers.entry_display")
 local utils = require("telescope.utils")
 local strings = require("plenary.strings")
-local Path = require("plenary.path")
 local make_entry = require("telescope.make_entry")
 local config = require("config").options
 
@@ -99,38 +98,17 @@ function M.displayer(opts)
 		items = items,
 	})
 
-	local cwd = vim.fn.expand(opts.cwd or vim.loop.cwd())
-
 	local make_display = function(entry)
 		return displayer(create_display_table(entry))
 	end
 
 	return function(entry)
-		local bufname = entry.info.name ~= "" and entry.info.name or "No Name"
-		-- if bufname is inside the cwd, trim that part of the string
-		bufname = Path:new(bufname):normalize(cwd)
-
-		local hidden = entry.info.hidden == 1 and "h" or "a"
-		local indicator = entry.flag .. hidden
-		local lnum = 1
-
-		-- account for potentially stale lnum as getbufinfo might not be updated or from resuming buffers picker
-		if entry.info.lnum ~= 0 then
-			-- but make sure the buffer is loaded, otherwise line_count is 0
-			if vim.api.nvim_buf_is_loaded(entry.bufnr) then
-				local line_count = vim.api.nvim_buf_line_count(entry.bufnr)
-				lnum = math.max(math.min(entry.info.lnum, line_count), 1)
-			else
-				lnum = entry.info.lnum
-			end
-		end
-
 		-- helper for mapping user config for search_field to the appropriate value
 		local ordinal_values = {
-			indicator = indicator,
-			term_name = entry.term_name,
+			indicator = entry._indicator,
+			term_name = entry._term_name,
 			bufnr = tostring(entry.bufnr),
-			bufname = bufname,
+			bufname = entry._bufname,
 		}
 
 		return make_entry.set_default_entry_mt({
@@ -138,11 +116,12 @@ function M.displayer(opts)
 			ordinal = ordinal_values[config.search_field], -- for filtering in telescope search
 			display = make_display,
 			bufnr = entry.bufnr,
-			filename = bufname,
-			lnum = lnum,
-			indicator = indicator,
-			term_name = entry.term_name,
+			filename = entry._bufname,
+			-- lnum = lnum,
+			indicator = entry._indicator,
+			term_name = entry._term_name,
 		}, opts)
 	end
 end
+
 return M

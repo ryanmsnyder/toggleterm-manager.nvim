@@ -120,12 +120,12 @@ end
 -- that was just renamed in this case) after calling the refresh method. Otherwise, because of the async behavior
 -- of refresh, set_selection will be called before the refresh is complete and the selection will just move
 -- to the first entry
-function M.set_selection_row(picker)
+function M.set_selection_row(picker, row_number)
 	local current_row = picker:get_selection_row()
 
 	local callbacks = { unpack(picker._completion_callbacks) } -- shallow copy
 	picker:register_completion_callback(function(self)
-		self:set_selection(current_row)
+		self:set_selection(row_number or current_row)
 		self._completion_callbacks = callbacks
 	end)
 end

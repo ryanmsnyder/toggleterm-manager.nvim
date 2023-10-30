@@ -92,15 +92,10 @@ function M.rename_terminal(prompt_bufnr, exit_on_action)
 				actions.close(prompt_bufnr)
 			else
 				local current_picker = actions_state.get_current_picker(prompt_bufnr)
-				-- local current_row = current_picker:get_selection_row()
-				local finder, row_number = util.create_finder(term.id)
+				local finder, new_row_number = util.create_finder(term.id)
 				current_picker:refresh(finder, { reset_prompt = false })
 
-				local callbacks = { unpack(current_picker._completion_callbacks) } -- shallow copy
-				current_picker:register_completion_callback(function(self)
-					self:set_selection(row_number)
-					self._completion_callbacks = callbacks
-				end)
+				util.set_selection_row(current_picker, new_row_number)
 			end
 
 			vim.cmd("echo ''") -- clear commandline

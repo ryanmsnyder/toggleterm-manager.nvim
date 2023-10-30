@@ -29,43 +29,91 @@ function M.format_results_title(mappings)
 	return table.concat(mapping_descriptions, "  ")
 end
 
-function M.create_finder(sort)
-	local terms = toggleterm.get_all(true)
+function M.get_terminals()
+	local bufnrs = vim.tbl_filter(function(b)
+		return vim.api.nvim_buf_get_option(b, "filetype") == "toggleterm"
+	end, vim.api.nvim_list_bufs())
+
+	if #bufnrs == 0 then
+		return {}, {}
+	end
+	local terminals = {}
 	local entry_maker_opts = {}
-	local bufnrs, term_name_lengths, bufname_lengths, buffers = {}, {}, {}, {}
+	local term_name_lengths, bufname_lengths = {}, {}
 
+	for _, bufnr in ipairs(bufnrs) do
+		local id = vim.api.nvim_buf_get_var(bufnr, "toggle_number")
+		local term = toggleterm.get(id)
+
+		local info = vim.fn.getbufinfo(term.bufnr)[1]
+		local term_name = term.display_name or tostring(term.id)
+		local flag = (term.bufnr == vim.fn.bufnr("") and "%") or (term.bufnr == vim.fn.bufnr("#") and "#" or "")
+
+		table.insert(term_name_lengths, #term_name)
+		table.insert(bufname_lengths, #info.name)
+
+		if flag ~= "" then
+			entry_maker_opts.flag_exists = true
+		end
+
+		term.info, term.flag, term.term_name = info, flag, term_name
+		table.insert(terminals, term)
+	end
+
+	entry_maker_opts.max_term_name_width = math.max(unpack(term_name_lengths))
+	entry_maker_opts.max_bufnr_width = #tostring(math.max(unpack(bufnrs)))
+	entry_maker_opts.max_bufname_width = math.max(unpack(bufname_lengths))
+
+	return terminals, entry_maker_opts
+end
+
+function M.create_finder(cur_row_term_id)
+	local config = require("config").options
+	local terms, entry_maker_opts = M.get_terminals()
+
+	local new_row_num
 	if #terms > 0 then
-		if sort then
-			table.sort(terms, function(a, b)
-				return vim.fn.getbufinfo(a.bufnr)[1].lastused > vim.fn.getbufinfo(b.bufnr)[1].lastused
-			end)
-		end
+		local sort_field = config.sort.field
+		local ascending = config.sort.ascending
+		local sort_funcs = {
+			bufname = function(a, b) end,
+			bufnr = function(a, b)
+				if ascending then
+					return a.bufnr < b.bufnr
+				end
+				return a.bufnr > b.bufnr
+			end,
+			creation = function(a, b) end,
+			lastused = function(a, b)
+				if ascending then
+					return a.info.lastused > b.info.lastused
+				end
+				return a.info.lastused < b.info.lastused
+			end,
+			term_name = function(a, b)
+				return a.term_name < b.term_name
+			end,
+		}
 
-		for _, term in ipairs(terms) do
-			local info = vim.fn.getbufinfo(term.bufnr)[1]
-			local term_name = term.display_name or tostring(term.id)
-			local flag = (term.bufnr == vim.fn.bufnr("") and "%") or (term.bufnr == vim.fn.bufnr("#") and "#" or "")
+		table.sort(terms, sort_funcs[sort_field])
 
-			table.insert(bufnrs, term.bufnr)
-			table.insert(term_name_lengths, #term_name)
-			table.insert(bufname_lengths, #info.name)
-			if flag ~= "" then
-				entry_maker_opts.flag_exists = true
+		-- get the new row number of the current_cur_row_term_id
+		-- useful when the telescope picker is refreshed and you want the cursor to remain on the same item even after sorting
+		if cur_row_term_id then
+			for i, term in ipairs(terms) do
+				if term.id == cur_row_term_id then
+					new_row_num = i - 1
+					break
+				end
 			end
-
-			term.info, term.flag, term.term_name = info, flag, term_name
-			table.insert(buffers, term)
 		end
-
-		entry_maker_opts.max_term_name_width = #terms > 0 and math.max(unpack(term_name_lengths))
-		entry_maker_opts.max_bufnr_width = #terms > 0 and #tostring(math.max(unpack(bufnrs)))
-		entry_maker_opts.max_bufname_width = #terms > 0 and math.max(unpack(bufname_lengths))
 	end
 
 	return finders.new_table({
-		results = buffers,
+		results = terms,
 		entry_maker = require("lib.displayer").displayer(entry_maker_opts),
-	})
+	}),
+		new_row_num
 end
 
 -- registering a callback is necessary to call set_selection (which is used to keep the selection on the entry
@@ -95,7 +143,6 @@ function M.focus_on_telescope(prompt_bufnr)
 		-- Check if the window's buffer is the one we're looking for
 		if vim.api.nvim_win_get_buf(win) == prompt_bufnr then
 			-- Set focus to that window
-			-- print(win)
 			vim.api.nvim_set_current_win(win)
 			return
 		end

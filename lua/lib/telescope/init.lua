@@ -14,7 +14,6 @@ if not status_ok then
 end
 local util = require("util")
 local actions = require("lib.actions")
--- local config = require("config").options
 
 local M = {}
 M.open = function(opts)
@@ -47,7 +46,7 @@ M.open = function(opts)
 		-- 	results = buffers,
 		-- 	entry_maker = displayer(entry_maker_opts),
 		-- }),
-		finder = util.create_finder(true),
+		finder = util.create_finder(),
 		sorter = conf.generic_sorter(opts),
 		attach_mappings = function(prompt_bufnr, map)
 			local mappings = config.mappings

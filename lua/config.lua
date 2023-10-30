@@ -15,6 +15,10 @@ local defaults = {
 	search_field = "term_name",
 	separator = " ",
 	term_icon = "",
+	sort = {
+		field = "bufnr",
+		ascending = true,
+	},
 }
 M.options = {}
 function M.setup(opts)

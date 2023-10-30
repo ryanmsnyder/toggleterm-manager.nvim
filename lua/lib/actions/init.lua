@@ -28,7 +28,7 @@ function M.create_terminal(prompt_bufnr, exit_on_action)
 					-- this ensures the cursor is moved to the correct term window after closing a term
 					toggleterm_ui.set_origin_window()
 					util.focus_on_telescope(prompt_bufnr)
-					current_picker:refresh(util.create_finder(false), { reset_prompt = false })
+					current_picker:refresh(util.create_finder(), { reset_prompt = false })
 
 					-- remove on_open callback after it's used to prevent side effects when opening the terminal
 					-- in other actions
@@ -92,17 +92,13 @@ function M.rename_terminal(prompt_bufnr, exit_on_action)
 				actions.close(prompt_bufnr)
 			else
 				local current_picker = actions_state.get_current_picker(prompt_bufnr)
-				local current_row = current_picker:get_selection_row()
-				-- current_picker:refresh(current_picker.finder, { reset_prompt = false })
-				current_picker:refresh(util.create_finder(false), { reset_prompt = false })
+				-- local current_row = current_picker:get_selection_row()
+				local finder, row_number = util.create_finder(term.id)
+				current_picker:refresh(finder, { reset_prompt = false })
 
-				-- registering a callback is necessary to call set_selection (which is used to keep the selection on the entry
-				-- that was just renamed in this case) after calling the refresh method. Otherwise, because of the async behavior
-				-- of refresh, set_selection will be called before the refresh is complete and the selection will just move
-				-- to the first entry
 				local callbacks = { unpack(current_picker._completion_callbacks) } -- shallow copy
 				current_picker:register_completion_callback(function(self)
-					self:set_selection(current_row)
+					self:set_selection(row_number)
 					self._completion_callbacks = callbacks
 				end)
 			end
@@ -134,7 +130,7 @@ function M.toggle_terminal(prompt_bufnr, exit_on_action)
 	end
 
 	util.focus_on_telescope(prompt_bufnr)
-	current_picker:refresh(util.create_finder(false), { reset_prompt = false })
+	current_picker:refresh(util.create_finder(), { reset_prompt = false })
 	util.set_selection_row(current_picker)
 
 	current_picker.original_win_id = term.window
@@ -164,10 +160,10 @@ function M.create_and_name_terminal(prompt_bufnr, exit_on_action)
 							-- this ensures the cursor is moved to the correct term window after closing a term
 							toggleterm_ui.set_origin_window()
 							util.focus_on_telescope(prompt_bufnr)
-							current_picker:refresh(util.create_finder(false), { reset_prompt = false })
+							current_picker:refresh(util.create_finder(), { reset_prompt = false })
 
 							-- current_picker:refresh(current_picker.finder, { reset_prompt = false })
-							current_picker:refresh(util.create_finder(false), { reset_prompt = false })
+							current_picker:refresh(util.create_finder(), { reset_prompt = false })
 
 							-- registering a callback is necessary to call set_selection (which is used to keep the selection on the entry
 							-- that was just renamed in this case) after calling the refresh method. Otherwise, because of the async behavior

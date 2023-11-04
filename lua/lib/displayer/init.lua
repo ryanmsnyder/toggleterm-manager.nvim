@@ -55,7 +55,7 @@ local function results_formatter(opts)
 		bufnr = { width = opts.max_bufnr_width },
 		indicator = { width = (opts.flag_exists and 2 or 1) },
 		term_icon = { width = icon_width },
-		term_name = { width = opts.toggle_name_width },
+		term_name = { width = opts.max_term_name_width },
 	}
 
 	process_results_config(items, items_col_widths)
@@ -117,7 +117,6 @@ function M.displayer(opts)
 			display = make_display,
 			bufnr = entry.bufnr,
 			filename = entry._bufname,
-			-- lnum = lnum,
 			indicator = entry._indicator,
 			term_name = entry._term_name,
 		}, opts)

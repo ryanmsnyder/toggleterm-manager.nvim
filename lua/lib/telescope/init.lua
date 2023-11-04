@@ -18,7 +18,6 @@ local actions = require("lib.actions")
 local M = {}
 M.open = function(opts)
 	local config = require("config").options
-
 	-- set origin window, which will need to be retrieved in some actions (actions/init.lua)
 	require("toggleterm.ui").set_origin_window()
 
@@ -37,6 +36,12 @@ M.open = function(opts)
 	-- 	end,
 	-- })
 
+	local desktopPath = os.getenv("HOME") .. "/Desktop/new.txt"
+	local file, err = io.open(desktopPath, "a")
+	if not file then
+		print("Error opening file:", err)
+		return
+	end
 	local picker = pickers.new(opts, {
 		prompt_title = config.prompt_title,
 		results_title = config.display_mappings and util.format_results_title(config.mappings) or config.results_title,
@@ -95,20 +100,12 @@ M.open = function(opts)
 				-- end, 0)
 			end)
 
-			-- mappings
-			-- local mappings = config.mappings
-			-- for keybind, action_tbl in pairs(mappings) do
-			-- 	local action = action_tbl["action"]
-			-- 	local exit_on_action = action_tbl["exit_on_action"]
-			-- 	map("i", keybind, function()
-			-- 		action(prompt_bufnr, exit_on_action)
-			-- 	end)
-			-- end
 			return true
 		end,
 	})
 	picker:find()
 
+	file:close()
 	-- TODO: create config option called insert_on_exit
 	vim.api.nvim_create_augroup("InsertOnPickerLeave", {})
 	vim.api.nvim_create_autocmd("BufLeave", {

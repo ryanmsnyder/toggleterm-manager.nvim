@@ -12,6 +12,7 @@ local function_name_to_description = {
 }
 
 function M.format_results_title(mappings)
+	print(vim.inspect(mappings))
 	local actions = require("telescope-toggleterm").actions
 	local mapping_descriptions = {}
 
@@ -48,14 +49,6 @@ function M.get_terminals()
 		local id = vim.api.nvim_buf_get_var(bufnr, "toggle_number")
 		local term = toggleterm.get(id)
 
-		local desktopPath = os.getenv("HOME") .. "/Desktop/new.txt"
-		local file, err = io.open(desktopPath, "w")
-		if not file then
-			print("Error opening file:", err)
-			return
-		end
-		file:write(vim.inspect(vim.fn.getbufinfo(term.bufnr)) .. "\n")
-		file:close()
 		local info = vim.fn.getbufinfo(term.bufnr)[1]
 
 		local flag = (term.bufnr == vim.fn.bufnr("") and "%") or (term.bufnr == vim.fn.bufnr("#") and "#" or "")

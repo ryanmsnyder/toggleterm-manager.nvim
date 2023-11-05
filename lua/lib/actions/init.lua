@@ -13,6 +13,44 @@ local util = require("util")
 
 local M = {}
 
+function M.open_terminal(prompt_bufnr, exit_on_action)
+	local current_picker = require("telescope.actions.state").get_current_picker(prompt_bufnr)
+
+	local selection = actions_state.get_selected_entry()
+	if selection == nil then
+		return
+	end
+
+	local term = selection.value
+
+	if exit_on_action then
+		actions.close(prompt_bufnr)
+		if not term:is_open() then
+			term:open()
+		end
+		term:focus()
+		vim.schedule(function()
+			vim.cmd("startinsert!")
+		end)
+	end
+
+	util.focus_on_origin_win()
+	if not term:is_open() then
+		function open_term()
+			term:open()
+		end
+		vim.cmd("noautocmd lua open_term()")
+	end
+
+	util.focus_on_telescope(prompt_bufnr)
+	local finder, new_row_number = util.create_finder(term.id)
+	current_picker:refresh(finder, { reset_prompt = false })
+
+	util.set_selection_row(current_picker, new_row_number)
+
+	current_picker.original_win_id = term.window
+end
+
 function M.create_terminal(prompt_bufnr, exit_on_action)
 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
 

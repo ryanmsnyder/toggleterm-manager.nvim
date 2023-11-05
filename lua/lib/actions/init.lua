@@ -101,14 +101,6 @@ function M.delete_terminal(prompt_bufnr, exit_on_action)
 		return
 	end
 
-	local desktopPath = os.getenv("HOME") .. "/Desktop/delete_terminal.txt"
-	local file, err = io.open(desktopPath, "a")
-	if not file then
-		print("Error opening file:", err)
-		return
-	end
-	file:write(selection.index .. "\n")
-	-- -- selection.value:focus()
 	local term = selection.value
 
 	if exit_on_action then
@@ -133,10 +125,6 @@ function M.delete_terminal(prompt_bufnr, exit_on_action)
 		print("Error while deleting buffer:", err)
 	end
 
-	local line = actions_state.get_current_line()
-
-	file:write("current_row: " .. line .. "\n")
-
 	toggleterm_ui.set_origin_window()
 	util.focus_on_telescope(prompt_bufnr)
 
@@ -150,7 +138,6 @@ function M.delete_terminal(prompt_bufnr, exit_on_action)
 	end
 	current_picker:refresh(finder, { reset_prompt = false })
 	util.set_selection_row(current_picker, new_row_number)
-	file:close()
 end
 
 function M.rename_terminal(prompt_bufnr, exit_on_action)

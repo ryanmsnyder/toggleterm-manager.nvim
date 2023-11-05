@@ -106,10 +106,29 @@ function M.create_finder(cur_row_term_id)
 				return a._info.lastused > b._info.lastused
 			end,
 			term_name = function(a, b)
-				if ascending then
-					return a._term_name < b._term_name
+				local numA = tonumber(a._term_name)
+				local numB = tonumber(b._term_name)
+
+				local result
+				if numA and numB then
+					if ascending then
+						result = numA < numB
+					else
+						result = numA > numB
+					end
+				elseif numA then
+					result = ascending
+				elseif numB then
+					result = not ascending
+				else
+					if ascending then
+						result = a._term_name < b._term_name
+					else
+						result = a._term_name > b._term_name
+					end
 				end
-				return a._term_name > b._term_name
+
+				return result
 			end,
 		}
 

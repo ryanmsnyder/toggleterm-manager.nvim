@@ -36,12 +36,6 @@ M.open = function(opts)
 	-- 	end,
 	-- })
 
-	local desktopPath = os.getenv("HOME") .. "/Desktop/new.txt"
-	local file, err = io.open(desktopPath, "a")
-	if not file then
-		print("Error opening file:", err)
-		return
-	end
 	local picker = pickers.new(opts, {
 		prompt_title = config.prompt_title,
 		results_title = config.display_mappings and util.format_results_title(config.mappings) or config.results_title,
@@ -105,7 +99,6 @@ M.open = function(opts)
 	})
 	picker:find()
 
-	file:close()
 	-- TODO: create config option called insert_on_exit
 	vim.api.nvim_create_augroup("InsertOnPickerLeave", {})
 	vim.api.nvim_create_autocmd("BufLeave", {

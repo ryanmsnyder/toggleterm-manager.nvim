@@ -55,67 +55,43 @@ function M.create_terminal(prompt_bufnr, exit_on_action)
 	-- this ensures that when telescope is exited manually, the cursor returns to the most recent terminal created
 	current_picker.original_win_id = term.window
 end
+
 -- function M.delete_terminal(prompt_bufnr, exit_on_action)
 -- 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
 -- 	current_picker:delete_selection(function(selection)
--- 		local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
+-- 		if selection == nil then
+-- 			return
+-- 		end
+--
+-- 		local term = selection.value
+--
 -- 		if exit_on_action then
 -- 			actions.close(prompt_bufnr)
--- 			vim.api.nvim_buf_delete(selection.bufnr, { force = force })
+-- 			term:shutdown()
 -- 			return
 -- 		end
 --
--- 		local desktopPath = os.getenv("HOME") .. "/Desktop/new.txt"
--- 		local file, err = io.open(desktopPath, "a")
--- 		if not file then
--- 			print("Error opening file:", err)
--- 			return
--- 		end
--- 		file:write("prompt buffer: " .. prompt_bufnr)
--- 		file:close()
+-- 		-- this prevents toggleterm from doing additional processing that would cause the telescope
+-- 		-- window to close. Toggleterm's __handle_exit is called when a terminal buffer is deleted,
+-- 		-- which calls term:close(). term.close() calls close_split(), which changes window focus
+-- 		-- and causes telescope to exit. See toggleterm's terminal.lua:__handle_exit and ui.lua:close_split.
+-- 		term.close_on_exit = false
+--
 -- 		-- util.focus_on_origin_win()
---
--- 		-- vim.cmd(string.format("noautocmd lua vim.api.nvim_buf_delete(%s, {force = true})", selection.bufnr))
--- 		local ok = pcall(vim.api.nvim_buf_delete, selection.bufnr, { force = force })
--- 		--
--- 		-- toggleterm_ui.set_origin_window()
--- 		--
--- 		-- util.focus_on_telescope(prompt_bufnr)
--- 		print(prompt_bufnr)
--- 		-- return ok
--- 		return true
--- 	end)
--- end
--- function M.delete_terminal(prompt_bufnr, exit_on_action)
--- 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
--- 	current_picker:delete_selection(function(selection)
 -- 		local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
--- 		if exit_on_action then
--- 			actions.close(prompt_bufnr)
+-- 		local ok, err = pcall(function()
 -- 			vim.api.nvim_buf_delete(selection.bufnr, { force = force })
--- 			return
+-- 		end)
+--
+-- 		if not ok then
+-- 			print("Error while deleting buffer:", err)
 -- 		end
 --
--- 		local desktopPath = os.getenv("HOME") .. "/Desktop/new.txt"
--- 		local file, err = io.open(desktopPath, "a")
--- 		if not file then
--- 			print("Error opening file:", err)
--- 			return
--- 		end
--- 		file:write("prompt buffer: " .. prompt_bufnr)
--- 		file:close()
---
--- 		-- util.focus_on_origin_win()
---
--- 		vim.cmd(string.format("noautocmd lua vim.api.nvim_buf_delete(%s, {force = true})", selection.bufnr))
--- 		-- local ok = pcall(vim.api.nvim_buf_delete, selection.bufnr, { force = force })
--- 		--
 -- 		toggleterm_ui.set_origin_window()
--- 		--
--- 		util.focus_on_telescope(prompt_bufnr)
--- 		print(prompt_bufnr)
--- 		-- return ok
--- 		return true
+-- 		-- util.focus_on_telescope(prompt_bufnr)
+-- 		-- local finder, new_row_number = util.create_finder(term.id)
+-- 		-- current_picker:refresh(finder, { reset_prompt = false })
+-- 		-- util.set_selection_row(current_picker, new_row_number)
 -- 	end)
 -- end
 
@@ -125,6 +101,14 @@ function M.delete_terminal(prompt_bufnr, exit_on_action)
 		return
 	end
 
+	local desktopPath = os.getenv("HOME") .. "/Desktop/delete_terminal.txt"
+	local file, err = io.open(desktopPath, "a")
+	if not file then
+		print("Error opening file:", err)
+		return
+	end
+	file:write(selection.index .. "\n")
+	-- -- selection.value:focus()
 	local term = selection.value
 
 	if exit_on_action then
@@ -132,6 +116,12 @@ function M.delete_terminal(prompt_bufnr, exit_on_action)
 		term:shutdown()
 		return
 	end
+
+	-- this prevents toggleterm from doing additional processing that would cause the telescope
+	-- window to close. Toggleterm's __handle_exit is called when a terminal buffer is deleted,
+	-- which calls term:close(). term.close() calls close_split(), which changes window focus
+	-- and causes telescope to exit. See toggleterm's terminal.lua:__handle_exit and ui.lua:close_split.
+	term.close_on_exit = false
 
 	util.focus_on_origin_win()
 	local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
@@ -142,18 +132,25 @@ function M.delete_terminal(prompt_bufnr, exit_on_action)
 	if not ok then
 		print("Error while deleting buffer:", err)
 	end
-	-- this prevents toggleterm from doing additional processing that would cause the telecope
-	-- window to close. __handle_exit is called when a terminal buffer is deleted, which calls
-	-- term:close(). term:close() calls close_split, which changes window focus and causes
-	-- telescope to exit. see toggleterm's terminal.lua:__handle_exit and ui.lua:close_split
-	term.close_on_exit = false
+
+	local line = actions_state.get_current_line()
+
+	file:write("current_row: " .. line .. "\n")
 
 	toggleterm_ui.set_origin_window()
 	util.focus_on_telescope(prompt_bufnr)
+
 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
-	local finder, new_row_number = util.create_finder(term.id)
+	local finder = util.create_finder(term.id)
+	local new_row_number
+	if selection.index > 1 then
+		new_row_number = selection.index - 2
+	else
+		new_row_number = 0
+	end
 	current_picker:refresh(finder, { reset_prompt = false })
 	util.set_selection_row(current_picker, new_row_number)
+	file:close()
 end
 
 function M.rename_terminal(prompt_bufnr, exit_on_action)

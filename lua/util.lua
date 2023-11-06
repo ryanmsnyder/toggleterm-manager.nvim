@@ -99,7 +99,7 @@ function M.create_finder(cur_row_term_id)
 				end
 				return a._indicator > b._indicator
 			end,
-			lastused = function(a, b)
+			recency = function(a, b)
 				if ascending then
 					return a._info.lastused < b._info.lastused
 				end

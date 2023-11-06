@@ -191,7 +191,7 @@ function M.rename_terminal(prompt_bufnr, exit_on_action)
 		util.clear_command_line()
 		if name and #name > 0 then
 			-- rename terminal within toggleterm
-			term._display_name = name
+			term.display_name = name
 
 			if exit_on_action then
 				actions.close(prompt_bufnr)

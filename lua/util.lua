@@ -45,6 +45,12 @@ function M.get_terminals()
 
 	local cwd = vim.fn.expand(vim.loop.cwd())
 
+	local desktopPath = os.getenv("HOME") .. "/Desktop/new.txt"
+	local file, err = io.open(desktopPath, "a")
+	if not file then
+		print("Error opening file:", err)
+		return
+	end
 	for _, bufnr in ipairs(bufnrs) do
 		local id = vim.api.nvim_buf_get_var(bufnr, "toggle_number")
 		local term = toggleterm.get(id)
@@ -52,8 +58,8 @@ function M.get_terminals()
 		local info = vim.fn.getbufinfo(term.bufnr)[1]
 
 		local flag = (term.bufnr == vim.fn.bufnr("") and "%") or (term.bufnr == vim.fn.bufnr("#") and "#" or "")
-		local hidden = info.hidden == 1 and "h" or "a"
-		local indicator = flag .. hidden
+		local visibility = info.hidden == 1 and "h" or "a"
+		local state = flag .. visibility
 
 		local term_name = term.display_name or tostring(term.id)
 
@@ -67,9 +73,12 @@ function M.get_terminals()
 			entry_maker_opts.flag_exists = true
 		end
 
-		term._info, term._indicator, term._term_name, term._bufname = info, indicator, term_name, bufname
+		file:write(vim.inspect(term) .. "\n")
+
+		term._info, term._state, term._term_name, term._bufname = info, state, term_name, bufname
 		table.insert(terminals, term)
 	end
+	file:close()
 
 	entry_maker_opts.max_term_name_width = math.max(unpack(term_name_lengths))
 	entry_maker_opts.max_bufnr_width = #tostring(math.max(unpack(bufnrs)))
@@ -93,11 +102,11 @@ function M.create_finder(cur_row_term_id)
 				end
 				return a.bufnr > b.bufnr
 			end,
-			indicator = function(a, b)
+			state = function(a, b)
 				if ascending then
-					return a._indicator < b._indicator
+					return a._state < b._state
 				end
-				return a._indicator > b._indicator
+				return a._state > b._state
 			end,
 			recency = function(a, b)
 				if ascending then

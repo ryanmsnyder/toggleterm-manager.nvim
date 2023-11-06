@@ -15,8 +15,8 @@ local function process_results_config(target_table, insert_val)
 		else
 			col = configItem
 		end
-		if col == "indicator" then
-			table.insert(target_table, insert_val.indicator)
+		if col == "state" then
+			table.insert(target_table, insert_val.state)
 		elseif col == "bufnr" then
 			table.insert(target_table, insert_val.bufnr)
 		elseif col == "bufname" then
@@ -53,7 +53,7 @@ local function results_formatter(opts)
 	local items_col_widths = {
 		bufname = { width = opts.max_bufname_width },
 		bufnr = { width = opts.max_bufnr_width },
-		indicator = { width = (opts.flag_exists and 2 or 1) },
+		state = { width = (opts.flag_exists and 2 or 1) },
 		term_icon = { width = icon_width },
 		term_name = { width = opts.max_term_name_width },
 	}
@@ -72,11 +72,11 @@ local function results_formatter(opts)
 		local bufnr_leading_spaces = opts.max_bufnr_width
 				and string.rep(" ", opts.max_bufnr_width - #tostring(entry.bufnr))
 			or "" -- for right aligning bufnr column
-		local indicator_leading_spaces = opts.flag_exists and #entry.indicator == 1 and " " or "" -- for right aligning indicator column
+		local state_leading_spaces = opts.flag_exists and #entry.state == 1 and " " or "" -- for right aligning state column
 		local displayer_col_vals = {
 			bufname = { display_bufname, "TelescopeResultsIdentifier" },
 			bufnr = { bufnr_leading_spaces .. tostring(entry.bufnr), "TelescopeResultsNumber" },
-			indicator = { indicator_leading_spaces .. entry.indicator, "TelescopeResultsComment" },
+			state = { state_leading_spaces .. entry.state, "TelescopeResultsComment" },
 			term_icon = { term_icon, hl_group },
 			term_name = { entry.term_name },
 		}
@@ -105,7 +105,7 @@ function M.displayer(opts)
 	return function(entry)
 		-- helper for mapping user config for search_field to the appropriate value
 		local ordinal_values = {
-			indicator = entry._indicator,
+			state = entry._state,
 			term_name = entry._term_name,
 			bufnr = tostring(entry.bufnr),
 			bufname = entry._bufname,
@@ -117,7 +117,7 @@ function M.displayer(opts)
 			display = make_display,
 			bufnr = entry.bufnr,
 			filename = entry._bufname,
-			indicator = entry._indicator,
+			state = entry._state,
 			term_name = entry._term_name,
 		}, opts)
 	end

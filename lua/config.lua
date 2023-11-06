@@ -6,7 +6,7 @@ local defaults = {
 	preview_title = "Preview",
 	prompt_title = " Pick Term",
 	results_format = {
-		"indicator",
+		"state",
 		"space",
 		"term_icon",
 		"term_name",

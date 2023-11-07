@@ -1,10 +1,7 @@
-local pickers, finders, actions, actions_state, conf
+local actions, actions_state
 if pcall(require, "telescope") then
-	pickers = require("telescope.pickers")
-	finders = require("telescope.finders")
 	actions = require("telescope.actions")
 	actions_state = require("telescope.actions.state")
-	conf = require("telescope.config").values
 else
 	error("Cannot find telescope!")
 end
@@ -29,9 +26,7 @@ function M.open_terminal(prompt_bufnr, exit_on_action)
 			term:open()
 		end
 		term:focus()
-		vim.schedule(function()
-			vim.cmd("startinsert!")
-		end)
+		return
 	end
 
 	util.focus_on_origin_win()
@@ -71,6 +66,10 @@ function M.create_terminal(prompt_bufnr, exit_on_action)
 
 					util.set_selection_row(current_picker, new_row_number)
 
+					-- update the telescope picker's original window id to the term window id that was just created
+					-- this ensures that when telescope is exited manually, the cursor returns to the most recent terminal created
+					current_picker.original_win_id = term.window
+
 					-- remove on_open callback after it's used to prevent side effects when opening the terminal
 					-- in other actions
 					term.on_open = nil
@@ -81,57 +80,15 @@ function M.create_terminal(prompt_bufnr, exit_on_action)
 
 	if exit_on_action then
 		actions.close(prompt_bufnr)
-		vim.schedule(function()
-			vim.cmd("startinsert!")
-		end)
+		-- the autocommand setup in telescope/init.lua that starts insert mode on leaving the telescope buffer
+		-- won't work here since the cursor may move to a non-toggleterm buftype for a brief moment while the
+		-- toggleterm buffer is being created
+		util.start_insert_mode()
 	else
 		util.focus_on_origin_win()
 	end
 	term:open()
-
-	-- update the telescope picker's original window id to the term window id that was just created
-	-- this ensures that when telescope is exited manually, the cursor returns to the most recent terminal created
-	current_picker.original_win_id = term.window
 end
-
--- function M.delete_terminal(prompt_bufnr, exit_on_action)
--- 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
--- 	current_picker:delete_selection(function(selection)
--- 		if selection == nil then
--- 			return
--- 		end
---
--- 		local term = selection.value
---
--- 		if exit_on_action then
--- 			actions.close(prompt_bufnr)
--- 			term:shutdown()
--- 			return
--- 		end
---
--- 		-- this prevents toggleterm from doing additional processing that would cause the telescope
--- 		-- window to close. Toggleterm's __handle_exit is called when a terminal buffer is deleted,
--- 		-- which calls term:close(). term.close() calls close_split(), which changes window focus
--- 		-- and causes telescope to exit. See toggleterm's terminal.lua:__handle_exit and ui.lua:close_split.
--- 		term.close_on_exit = false
---
--- 		-- util.focus_on_origin_win()
--- 		local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
--- 		local ok, err = pcall(function()
--- 			vim.api.nvim_buf_delete(selection.bufnr, { force = force })
--- 		end)
---
--- 		if not ok then
--- 			print("Error while deleting buffer:", err)
--- 		end
---
--- 		toggleterm_ui.set_origin_window()
--- 		-- util.focus_on_telescope(prompt_bufnr)
--- 		-- local finder, new_row_number = util.create_finder(term.id)
--- 		-- current_picker:refresh(finder, { reset_prompt = false })
--- 		-- util.set_selection_row(current_picker, new_row_number)
--- 	end)
--- end
 
 function M.delete_terminal(prompt_bufnr, exit_on_action)
 	local selection = actions_state.get_selected_entry()
@@ -217,14 +174,15 @@ function M.toggle_terminal(prompt_bufnr, exit_on_action)
 	local term = selection.value
 
 	util.focus_on_origin_win()
-	-- toggleterm_ui.set_origin_window()
 	if term:is_open() then
 		term:close()
+		current_picker.original_win_id = toggleterm_ui.get_origin_window()
 	else
 		function open_term()
 			term:open()
 		end
 		vim.cmd("noautocmd lua open_term()")
+		current_picker.original_win_id = term.window
 	end
 
 	util.focus_on_telescope(prompt_bufnr)
@@ -232,8 +190,6 @@ function M.toggle_terminal(prompt_bufnr, exit_on_action)
 	current_picker:refresh(finder, { reset_prompt = false })
 
 	util.set_selection_row(current_picker, new_row_number)
-
-	current_picker.original_win_id = term.window
 end
 
 function M.create_and_name_terminal(prompt_bufnr, exit_on_action)
@@ -273,9 +229,10 @@ function M.create_and_name_terminal(prompt_bufnr, exit_on_action)
 
 			if exit_on_action then
 				actions.close(prompt_bufnr)
-				vim.schedule(function()
-					vim.cmd("startinsert!")
-				end)
+				-- the autocommand setup in telescope/init.lua that starts insert mode on leaving the telescope buffer
+				-- won't work here since the cursor may move to a non-toggleterm buftype for a brief moment while the
+				-- toggleterm buffer is being created
+				util.start_insert_mode()
 			else
 				util.focus_on_origin_win()
 			end

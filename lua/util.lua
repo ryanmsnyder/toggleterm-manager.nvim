@@ -45,12 +45,6 @@ function M.get_terminals()
 
 	local cwd = vim.fn.expand(vim.loop.cwd())
 
-	local desktopPath = os.getenv("HOME") .. "/Desktop/new.txt"
-	local file, err = io.open(desktopPath, "a")
-	if not file then
-		print("Error opening file:", err)
-		return
-	end
 	for _, bufnr in ipairs(bufnrs) do
 		local id = vim.api.nvim_buf_get_var(bufnr, "toggle_number")
 		local term = toggleterm.get(id)
@@ -73,12 +67,9 @@ function M.get_terminals()
 			entry_maker_opts.flag_exists = true
 		end
 
-		file:write(vim.inspect(term) .. "\n")
-
 		term._info, term._state, term._term_name, term._bufname = info, state, term_name, bufname
 		table.insert(terminals, term)
 	end
-	file:close()
 
 	entry_maker_opts.max_term_name_width = math.max(unpack(term_name_lengths))
 	entry_maker_opts.max_bufnr_width = #tostring(math.max(unpack(bufnrs)))
@@ -198,6 +189,12 @@ end
 
 function M.clear_command_line()
 	vim.cmd("echo ''")
+end
+
+function M.start_insert_mode()
+	vim.schedule(function()
+		vim.cmd("startinsert!")
+	end)
 end
 
 return M

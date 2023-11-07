@@ -32,6 +32,9 @@ function M.format_results_title(mappings)
 	return table.concat(mapping_descriptions, "  ")
 end
 
+--- Get the list of terminals and their properties.
+--- @return table, table A tuple containing a list of toggleterm/terminal objects and a table of options that will be used for
+--- creating the telescope entries.
 function M.get_terminals()
 	local bufnrs = vim.tbl_filter(function(b)
 		return vim.api.nvim_buf_get_option(b, "filetype") == "toggleterm"
@@ -79,6 +82,10 @@ function M.get_terminals()
 	return terminals, entry_maker_opts
 end
 
+--- Create a telescope finder with the current terminals. Sort the terminal objects based on the user's
+--- sort table provided in their config. This determines the order they appear in the telescope buffer.
+--- @param cur_row_term_id number|nil The id of the current terminal to find.
+--- @return function, number A new finder function and the row number of the current terminal.
 function M.create_finder(cur_row_term_id)
 	local config = require("config").options
 	local terms, entry_maker_opts = M.get_terminals()
@@ -154,17 +161,35 @@ function M.create_finder(cur_row_term_id)
 		new_row_num
 end
 
--- function M.refresh_picker_with_term(prompt_bufnr, term)
--- 	M.focus_on_telescope(prompt_bufnr)
--- 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
--- 	local finder, new_row_number = M.create_finder(term.id)
--- 	current_picker:refresh(finder, { reset_prompt = false })
--- 	M.set_selection_row(current_picker, new_row_number)
--- 	current_picker.original_win_id = term.window
--- end
+--- Focuses on toggleterm's current origin window without closing telescope (the use of noautocmd prevents the
+--- telescope prompt from automatically closing). Useful for actions where exit_on_action is false.
+function M.focus_on_origin_win()
+	local window = toggleterm_ui.get_origin_window()
+	vim.cmd(string.format("noautocmd lua vim.api.nvim_set_current_win(%s)", window))
+end
 
+--- Focus on the telescope prompt buffer window. Useful for actions where exit_on_action is false. This would typically be called
+--- after calling focus_on_origin_win and manipulating terminal buffers (i.e. open, close, create).
+--- @param prompt_bufnr number The buffer number of the telescope prompt.
+function M.focus_on_telescope(prompt_bufnr)
+	-- Go through all the windows
+	for _, win in ipairs(vim.api.nvim_list_wins()) do
+		-- Check if the window's buffer is the one we're looking for
+		if vim.api.nvim_win_get_buf(win) == prompt_bufnr then
+			-- Set focus to that window
+			vim.api.nvim_set_current_win(win)
+			return
+		end
+	end
+	print("Telescope buffer not visible in any window")
+end
+
+--- Focus on the open telescope buffer and refresh the picker so the changes to the terminal buffers caused by an action in
+--- actions/init.lua are reflected in telescope.
+--- @param prompt_bufnr number The buffer number of the prompt.
+--- @param selection table The current selection object.
+--- @param deleted boolean|nil A boolean indicating if the selection was deleted.
 function M.refresh_picker(prompt_bufnr, selection, deleted)
-	M.focus_on_telescope(prompt_bufnr)
 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
 	local finder, new_row_number = M.create_finder(selection.id)
 
@@ -182,13 +207,16 @@ function M.refresh_picker(prompt_bufnr, selection, deleted)
 	end
 end
 
--- registering a callback is necessary to call set_selection (which is used to keep the selection on the entry
--- that was just renamed in this case) after calling the refresh method. Otherwise, because of the async behavior
--- of refresh, set_selection will be called before the refresh is complete and the selection will just move
--- to the first entry
+--- Set the selection row in the telescope picker. Useful for keeping the selection on the current entry after an action in
+--- actions/init.lua is run and refresh_picker is run.
+--- @param picker table The telescope picker object.
+--- @param row_number number The row number to set the selection to.
 function M.set_selection_row(picker, row_number)
 	local current_row = picker:get_selection_row()
 
+	-- Registering a callback is necessary to call set_selection after calling the
+	-- refresh method. Otherwise, because of the async behavior of refresh, set_selection will be called before the refresh is complete
+	-- and the selection will just move to the first entry
 	local callbacks = { unpack(picker._completion_callbacks) } -- shallow copy
 	picker:register_completion_callback(function(self)
 		self:set_selection(row_number or current_row)
@@ -196,30 +224,12 @@ function M.set_selection_row(picker, row_number)
 	end)
 end
 
--- focuses on toggleterm's current origin window without closing telescope (the use of noautocmd prevents the
--- telescope prompt from automatically closing)
-function M.focus_on_origin_win()
-	local window = toggleterm_ui.get_origin_window()
-	vim.cmd(string.format("noautocmd lua vim.api.nvim_set_current_win(%s)", window))
-end
-
-function M.focus_on_telescope(prompt_bufnr)
-	-- Go through all the windows
-	for _, win in ipairs(vim.api.nvim_list_wins()) do
-		-- Check if the window's buffer is the one we're looking for
-		if vim.api.nvim_win_get_buf(win) == prompt_bufnr then
-			-- Set focus to that window
-			vim.api.nvim_set_current_win(win)
-			return
-		end
-	end
-	print("Telescope buffer not visible in any window")
-end
-
+--- Clear the command line after naming a toggleterm terminal.
 function M.clear_command_line()
 	vim.cmd("echo ''")
 end
 
+--- Start insert mode.
 function M.start_insert_mode()
 	vim.schedule(function()
 		vim.cmd("startinsert!")

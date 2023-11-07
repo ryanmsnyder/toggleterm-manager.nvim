@@ -24,6 +24,7 @@ function M.create_term(prompt_bufnr, exit_on_action)
 				-- set origin window to current term before switching back to telescope
 				-- this ensures the cursor is moved to the correct term window after closing a term
 				toggleterm_ui.set_origin_window()
+				util.focus_on_telescope(prompt_bufnr)
 				util.refresh_picker(prompt_bufnr, term)
 				-- remove the on_open callback to avoid potential side effects in future actions.
 				term.on_open = nil
@@ -63,6 +64,7 @@ function M.create_and_name_term(prompt_bufnr, exit_on_action)
 						-- set origin window to current term before switching back to telescope
 						-- this ensures the cursor is moved to the correct term window after closing a term
 						toggleterm_ui.set_origin_window()
+						util.focus_on_telescope(prompt_bufnr)
 						util.refresh_picker(prompt_bufnr, term)
 						-- remove the on_open callback to avoid potential side effects in future actions.
 						term.on_open = nil
@@ -111,6 +113,7 @@ function M.open_term(prompt_bufnr, exit_on_action)
 		term:open()
 	end
 
+	util.focus_on_telescope(prompt_bufnr)
 	util.refresh_picker(prompt_bufnr, term)
 end
 
@@ -164,6 +167,8 @@ function M.delete_term(prompt_bufnr, exit_on_action)
 	-- Reset the origin window in the toggleterm UI after deletion.
 	toggleterm_ui.set_origin_window()
 
+	util.focus_on_telescope(prompt_bufnr)
+
 	-- Refresh the picker to reflect the changes in the list of terminals.
 	-- Pass a boolean flag indicating that an item has been deleted
 	util.refresh_picker(prompt_bufnr, selection, true)
@@ -197,6 +202,7 @@ function M.toggle_term(prompt_bufnr, exit_on_action)
 		current_picker.original_win_id = term.window
 	end
 
+	util.focus_on_telescope(prompt_bufnr)
 	util.refresh_picker(prompt_bufnr, term)
 end
 

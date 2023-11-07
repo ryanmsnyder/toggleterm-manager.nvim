@@ -36,22 +36,23 @@ end
 --- @return table, table A tuple containing a list of toggleterm/terminal objects and a table of options that will be used for
 --- creating the telescope entries.
 function M.get_terminals()
-	local bufnrs = vim.tbl_filter(function(b)
-		return vim.api.nvim_buf_get_option(b, "filetype") == "toggleterm"
-	end, vim.api.nvim_list_bufs())
+	-- local bufnrs = vim.tbl_filter(function(b)
+	-- 	return vim.api.nvim_buf_get_option(b, "filetype") == "toggleterm"
+	-- end, vim.api.nvim_list_bufs())
 
-	if #bufnrs == 0 then
+	local terms = toggleterm.get_all(true)
+	if #terms == 0 then
 		return {}, {}
 	end
 	local terminals = {}
 	local entry_maker_opts = {}
-	local term_name_lengths, bufname_lengths = {}, {}
+	local bufnrs, term_name_lengths, bufname_lengths = {}, {}, {}
 
 	local cwd = vim.fn.expand(vim.loop.cwd())
 
-	for _, bufnr in ipairs(bufnrs) do
-		local id = vim.api.nvim_buf_get_var(bufnr, "toggle_number")
-		local term = toggleterm.get(id)
+	for _, term in ipairs(terms) do
+		-- local id = vim.api.nvim_buf_get_var(term, "toggle_number")
+		-- local term = toggleterm.get(id)
 
 		local info = vim.fn.getbufinfo(term.bufnr)[1]
 
@@ -64,6 +65,7 @@ function M.get_terminals()
 		local bufname = info.name ~= "" and info.name or "No Name"
 		bufname = Path:new(bufname):normalize(cwd) -- if bufname is inside the cwd, trim that part of the string
 
+		table.insert(bufnrs, term.bufnr)
 		table.insert(term_name_lengths, #term_name)
 		table.insert(bufname_lengths, #info.name)
 
@@ -203,7 +205,9 @@ function M.refresh_picker(prompt_bufnr, selection, deleted)
 
 	if not deleted then
 		-- Update the telescope picker's original window id to the term window id that was just created
-		current_picker.original_win_id = selection.window
+		if selection.window then
+			current_picker.original_win_id = selection.window
+		end
 	end
 end
 

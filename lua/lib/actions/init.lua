@@ -1,15 +1,19 @@
 local actions = require("telescope.actions")
 local actions_state = require("telescope.actions.state")
 local toggleterm_ui = require("toggleterm.ui")
+local toggleterm_config = require("toggleterm.config")
 local util = require("util")
 local Terminal = require("toggleterm.terminal").Terminal
 
 local M = {}
 
---- Create a new terminal and open it. If exit_on_action is true, focus it.
+--- Create a new terminal and open it. If exit_on_action is true, focus it. If the term's direction is "float" and
+--- exit_on_action is false, don't automatically open the terminal upon creation to prevent flashes.
 --- @param prompt_bufnr number The buffer number of the telescope prompt.
 --- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
 function M.create_term(prompt_bufnr, exit_on_action)
+	local float = toggleterm_config.get("direction") == "float"
+
 	-- forward declare `term` so it can be used inside `on_open_terminal`.
 	local term
 
@@ -27,8 +31,6 @@ function M.create_term(prompt_bufnr, exit_on_action)
 		end
 	end
 
-	term = Terminal:new({ on_open = on_open_terminal })
-
 	if exit_on_action then
 		actions.close(prompt_bufnr)
 
@@ -36,17 +38,29 @@ function M.create_term(prompt_bufnr, exit_on_action)
 		-- won't work here since the cursor may move to a non-toggleterm buftype for a brief moment while the
 		-- toggleterm buffer is being created
 		util.start_insert_mode()
-	else
-		util.focus_on_origin_win()
 	end
 
-	term:open()
+	term = Terminal:new({ hidden = float, on_open = on_open_terminal })
+
+	if float and exit_on_action then
+		term:open()
+	elseif float then
+		term:spawn()
+		util.refresh_picker(prompt_bufnr, term)
+		-- remove the on_open callback to avoid potential side effects in future actions.
+		term.on_open = nil
+	else
+		util.focus_on_origin_win()
+		term:open()
+	end
 end
 
 --- Create and name a new terminal and open it. If exit_on_action is true, focus it.
 --- @param prompt_bufnr number The buffer number of the telescope prompt.
 --- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
 function M.create_and_name_term(prompt_bufnr, exit_on_action)
+	local float = toggleterm_config.get("direction") == "float"
+
 	local prompt = "Name terminal: "
 
 	vim.ui.input({ prompt = prompt }, function(name)
@@ -67,18 +81,28 @@ function M.create_and_name_term(prompt_bufnr, exit_on_action)
 				end
 			end
 
-			term = Terminal:new({ display_name = name, on_open = on_open_terminal })
-
 			if exit_on_action then
 				actions.close(prompt_bufnr)
+
 				-- the autocommand setup in telescope/init.lua that starts insert mode on leaving the telescope buffer
 				-- won't work here since the cursor may move to a non-toggleterm buftype for a brief moment while the
 				-- toggleterm buffer is being created
 				util.start_insert_mode()
+			end
+
+			term = Terminal:new({ display_name = name, hidden = float, on_open = on_open_terminal })
+
+			if float and exit_on_action then
+				term:open()
+			elseif float then
+				term:spawn()
+				util.refresh_picker(prompt_bufnr, term)
+				-- remove the on_open callback to avoid potential side effects in future actions.
+				term.on_open = nil
 			else
 				util.focus_on_origin_win()
+				term:open()
 			end
-			term:open()
 		end
 	end)
 end
@@ -180,6 +204,7 @@ function M.toggle_term(prompt_bufnr, exit_on_action)
 	if exit_on_action then
 		actions.close(prompt_bufnr)
 		term:toggle()
+		util.start_insert_mode()
 		return
 	end
 
@@ -196,7 +221,7 @@ function M.toggle_term(prompt_bufnr, exit_on_action)
 	util.refresh_picker(prompt_bufnr, term)
 end
 
---- Rename a terminal. If exit_on_action is true, focus it.
+--- Rename a terminal. If exit_on_action is true and the terminal is open, focus it.
 --- @param prompt_bufnr number The buffer number of the telescope prompt.
 --- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
 function M.rename_term(prompt_bufnr, exit_on_action)

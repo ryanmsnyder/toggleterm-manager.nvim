@@ -15,27 +15,14 @@ local function telescope_leave_autocmd(picker)
 		nested = true,
 		once = true,
 		callback = function()
-			local desktopPath = os.getenv("HOME") .. "/Desktop/new.txt"
-			local file, err = io.open(desktopPath, "a")
-			if not file then
-				print("Error opening file:", err)
-				return
-			end
-			file:write("leave" .. "\n")
-
 			local win_is_valid = vim.api.nvim_win_is_valid(picker.original_win_id)
-			file:write("picker.original_win_id: " .. picker.original_win_id .. "\n")
 			if win_is_valid then
-				file:write("win_is_valid" .. "\n")
 				local picker_orig_win_bufnr = vim.fn.winbufnr(picker.original_win_id)
 				local buftype = vim.api.nvim_buf_get_option(picker_orig_win_bufnr, "filetype")
-				file:write("buftype: " .. buftype .. "\n")
 				if buftype == "toggleterm" then
 					util.start_insert_mode()
 				end
 			end
-			file:write("\n")
-			file:close()
 		end,
 	})
 end

@@ -201,7 +201,7 @@ function M.toggle_term(prompt_bufnr, exit_on_action)
 	util.refresh_picker(prompt_bufnr, term)
 end
 
---- Rename a terminal.
+--- Rename a terminal. If exit_on_action is true, focus it.
 --- @param prompt_bufnr number The buffer number of the telescope prompt.
 --- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
 function M.rename_term(prompt_bufnr, exit_on_action)
@@ -221,6 +221,7 @@ function M.rename_term(prompt_bufnr, exit_on_action)
 
 			if exit_on_action then
 				actions.close(prompt_bufnr)
+				term:focus()
 			else
 				local current_picker = actions_state.get_current_picker(prompt_bufnr)
 				local finder, new_row_number = util.create_finder(term.id)

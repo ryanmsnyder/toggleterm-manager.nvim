@@ -11,6 +11,9 @@ local Terminal = require("toggleterm.terminal").Terminal
 
 local M = {}
 
+--- Create a new terminal and open it. If exit_on_action is true, focus it.
+--- @param prompt_bufnr number The buffer number of the telescope prompt.
+--- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
 function M.create_term(prompt_bufnr, exit_on_action)
 	-- forward declare `term` so it can be used inside `on_open_terminal`.
 	local term
@@ -44,6 +47,9 @@ function M.create_term(prompt_bufnr, exit_on_action)
 	term:open()
 end
 
+--- Create and name a new terminal and open it. If exit_on_action is true, focus it.
+--- @param prompt_bufnr number The buffer number of the telescope prompt.
+--- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
 function M.create_and_name_term(prompt_bufnr, exit_on_action)
 	local prompt = "Name terminal: "
 
@@ -80,6 +86,9 @@ function M.create_and_name_term(prompt_bufnr, exit_on_action)
 	end)
 end
 
+--- Open a terminal. If exit_on_action is true, focus it.
+--- @param prompt_bufnr number The buffer number of the telescope prompt.
+--- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
 function M.open_term(prompt_bufnr, exit_on_action)
 	local selection = actions_state.get_selected_entry()
 	if selection == nil then
@@ -105,6 +114,9 @@ function M.open_term(prompt_bufnr, exit_on_action)
 	util.refresh_picker(prompt_bufnr, term)
 end
 
+--- Delete a buffer, with an option to force deletion.
+--- @param bufnr number The buffer number to delete.
+--- @param force boolean Whether to force deletion or not.
 local function delete_buffer(bufnr, force)
 	local ok, err = pcall(function()
 		vim.api.nvim_buf_delete(bufnr, { force = force })
@@ -116,6 +128,9 @@ local function delete_buffer(bufnr, force)
 	end
 end
 
+--- Delete a terminal.
+--- @param prompt_bufnr number The buffer number of the telescope prompt.
+--- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
 function M.delete_term(prompt_bufnr, exit_on_action)
 	local selection = actions_state.get_selected_entry()
 	if selection == nil then
@@ -154,6 +169,9 @@ function M.delete_term(prompt_bufnr, exit_on_action)
 	util.refresh_picker(prompt_bufnr, selection, true)
 end
 
+--- Toggle a terminal open or closed. If toggling open and exit_on_action is true, focus it.
+--- @param prompt_bufnr number The buffer number of the telescope prompt.
+--- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
 function M.toggle_term(prompt_bufnr, exit_on_action)
 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
 
@@ -182,6 +200,9 @@ function M.toggle_term(prompt_bufnr, exit_on_action)
 	util.refresh_picker(prompt_bufnr, term)
 end
 
+--- Rename a terminal. If exit_on_action is true, focus it.
+--- @param prompt_bufnr number The buffer number of the telescope prompt.
+--- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
 function M.rename_term(prompt_bufnr, exit_on_action)
 	local selection = actions_state.get_selected_entry()
 	if selection == nil then

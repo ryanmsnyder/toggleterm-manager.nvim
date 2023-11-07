@@ -100,6 +100,7 @@ function M.open_term(prompt_bufnr, exit_on_action)
 			term:open()
 		end
 		term:focus()
+		util.start_insert_mode()
 		return
 	end
 
@@ -150,22 +151,16 @@ function M.delete_term(prompt_bufnr, exit_on_action)
 	-- and causes telescope to exit. See toggleterm's terminal.lua:__handle_exit and ui.lua:close_split.
 	term.close_on_exit = false
 
-	-- Focus the origin window before deleting the buffer to avoid Telescope from closing.
 	util.focus_on_origin_win()
 
-	-- Check if the buffer type is 'terminal', which requires 'force' when deleting.
 	local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
 
-	-- Delete the buffer associated with the terminal.
 	delete_buffer(selection.bufnr, force)
 
-	-- Reset the origin window in the toggleterm UI after deletion.
 	toggleterm_ui.set_origin_window()
 
 	util.focus_on_telescope(prompt_bufnr)
 
-	-- Refresh the picker to reflect the changes in the list of terminals.
-	-- Pass a boolean flag indicating that an item has been deleted
 	util.refresh_picker(prompt_bufnr, selection, true)
 end
 

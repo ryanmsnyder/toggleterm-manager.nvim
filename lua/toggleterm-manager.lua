@@ -5,7 +5,7 @@ if not has_telescope then
 end
 
 local M = {}
-require("telescope").load_extension("toggleterm")
+require("telescope").load_extension("toggleterm_manager")
 
 M.actions = require("lib.actions")
 M.open = require("lib.telescope").open

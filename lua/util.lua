@@ -14,7 +14,7 @@ local function_name_to_description = {
 
 function M.format_results_title(mappings)
 	print(vim.inspect(mappings))
-	local actions = require("telescope-toggleterm").actions
+	local actions = require("toggleterm-manager").actions
 	local mapping_descriptions = {}
 
 	for mapping, action_tbl in pairs(mappings) do

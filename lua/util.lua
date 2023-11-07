@@ -2,6 +2,7 @@ local finders = require("telescope.finders")
 local toggleterm = require("toggleterm.terminal")
 local toggleterm_ui = require("toggleterm.ui")
 local Path = require("plenary.path")
+local actions_state = require("telescope.actions.state")
 
 local M = {}
 local function_name_to_description = {
@@ -151,6 +152,34 @@ function M.create_finder(cur_row_term_id)
 		entry_maker = require("lib.displayer").displayer(entry_maker_opts),
 	}),
 		new_row_num
+end
+
+-- function M.refresh_picker_with_term(prompt_bufnr, term)
+-- 	M.focus_on_telescope(prompt_bufnr)
+-- 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
+-- 	local finder, new_row_number = M.create_finder(term.id)
+-- 	current_picker:refresh(finder, { reset_prompt = false })
+-- 	M.set_selection_row(current_picker, new_row_number)
+-- 	current_picker.original_win_id = term.window
+-- end
+
+function M.refresh_picker(prompt_bufnr, selection, deleted)
+	M.focus_on_telescope(prompt_bufnr)
+	local current_picker = actions_state.get_current_picker(prompt_bufnr)
+	local finder, new_row_number = M.create_finder(selection.id)
+
+	-- If an item has been deleted, we need to adjust the row number
+	if deleted and selection.index > 1 then
+		new_row_number = selection.index - 2
+	end
+
+	current_picker:refresh(finder, { reset_prompt = false })
+	M.set_selection_row(current_picker, new_row_number)
+
+	if not deleted then
+		-- Update the telescope picker's original window id to the term window id that was just created
+		current_picker.original_win_id = selection.window
+	end
 end
 
 -- registering a callback is necessary to call set_selection (which is used to keep the selection on the entry

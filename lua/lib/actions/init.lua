@@ -1,8 +1,3 @@
-local has_telescope = pcall(require, "telescope")
-if not has_telescope then
-	vim.notify("Telescope is not installed", vim.log.levels.ERROR)
-	return M
-end
 local actions = require("telescope.actions")
 local actions_state = require("telescope.actions.state")
 local toggleterm_ui = require("toggleterm.ui")
@@ -206,7 +201,7 @@ function M.toggle_term(prompt_bufnr, exit_on_action)
 	util.refresh_picker(prompt_bufnr, term)
 end
 
---- Rename a terminal. If exit_on_action is true, focus it.
+--- Rename a terminal.
 --- @param prompt_bufnr number The buffer number of the telescope prompt.
 --- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
 function M.rename_term(prompt_bufnr, exit_on_action)

@@ -37,9 +37,10 @@ M.open = function(opts)
 	require("toggleterm.ui").set_origin_window()
 
 	local picker = pickers.new(opts, {
-		prompt_title = config.prompt_title,
-		results_title = config.display_mappings and util.format_results_title(config.mappings) or config.results_title,
-		preview_title = config.preview_title,
+		prompt_title = config.telescope_titles.prompt,
+		results_title = config.display_mappings and util.format_results_title(config.mappings)
+			or config.telescope_titles.results,
+		preview_title = config.telescope_titles.preview,
 		previewer = conf.grep_previewer(opts),
 		finder = util.create_finder(),
 		sorter = conf.generic_sorter(opts),

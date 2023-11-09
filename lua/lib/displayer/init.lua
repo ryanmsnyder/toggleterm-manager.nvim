@@ -7,7 +7,7 @@ local config = require("config").options
 local M = {}
 
 local function process_results_config(target_table, insert_val)
-	for _, configItem in ipairs(config.results_format) do
+	for _, configItem in ipairs(config.results.fields) do
 		-- if value in results_config is a table (contains the column type and highlight group)
 		local col
 		if type(configItem) == "table" then
@@ -47,7 +47,7 @@ local function results_formatter(opts)
 	local items = {}
 
 	local icon_width = 0
-	local term_icon = config.term_icon
+	local term_icon = config.results.term_icon
 	icon_width = strings.strdisplaywidth(term_icon)
 
 	local items_col_widths = {
@@ -94,7 +94,7 @@ function M.displayer(opts)
 	local items, create_display_table = results_formatter(opts)
 
 	local displayer = entry_display.create({
-		separator = config.separator,
+		separator = config.results.separator,
 		items = items,
 	})
 
@@ -105,15 +105,15 @@ function M.displayer(opts)
 	return function(entry)
 		-- helper for mapping user config for search_field to the appropriate value
 		local ordinal_values = {
+			bufname = entry._bufname,
+			bufnr = tostring(entry.bufnr),
 			state = entry._state,
 			term_name = entry._term_name,
-			bufnr = tostring(entry.bufnr),
-			bufname = entry._bufname,
 		}
 
 		return make_entry.set_default_entry_mt({
 			value = entry,
-			ordinal = ordinal_values[config.search_field], -- for filtering in telescope search
+			ordinal = ordinal_values[config.search.field], -- for filtering in telescope search
 			display = make_display,
 			bufnr = entry.bufnr,
 			filename = entry._bufname,

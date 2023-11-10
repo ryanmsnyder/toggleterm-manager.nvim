@@ -228,6 +228,20 @@ function M.set_selection_row(picker, row_number)
 	end)
 end
 
+--- Delete a buffer, with an option to force deletion.
+--- @param bufnr number The buffer number to delete.
+--- @param force boolean Whether to force deletion or not.
+function M.delete_buffer(bufnr, force)
+	local ok, err = pcall(function()
+		vim.api.nvim_buf_delete(bufnr, { force = force })
+	end)
+
+	if not ok then
+		local msg = "Error while deleting buffer: " .. tostring(err)
+		vim.notify(msg, vim.log.levels.WARN)
+	end
+end
+
 --- Clear the command line after naming a toggleterm terminal.
 function M.clear_command_line()
 	vim.cmd("echo ''")

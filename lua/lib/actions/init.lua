@@ -107,6 +107,38 @@ function M.create_and_name_term(prompt_bufnr, exit_on_action)
 	end)
 end
 
+--- Rename a terminal. If exit_on_action is true and the terminal is open, focus it.
+--- @param prompt_bufnr number The buffer number of the telescope prompt.
+--- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
+function M.rename_term(prompt_bufnr, exit_on_action)
+	local selection = actions_state.get_selected_entry()
+	if selection == nil then
+		return
+	end
+
+	local term = selection.value
+
+	local prompt = string.format("Rename terminal %s: ", selection.term_name)
+	vim.ui.input({ prompt = prompt }, function(name)
+		util.clear_command_line()
+		if name and #name > 0 then
+			-- rename terminal within toggleterm
+			term.display_name = name
+
+			if exit_on_action then
+				actions.close(prompt_bufnr)
+				term:focus()
+			else
+				local current_picker = actions_state.get_current_picker(prompt_bufnr)
+				local finder, new_row_number = util.create_finder(term.id)
+				current_picker:refresh(finder, { reset_prompt = false })
+
+				util.set_selection_row(current_picker, new_row_number)
+			end
+		end
+	end)
+end
+
 --- Open a terminal. If exit_on_action is true, focus it.
 --- @param prompt_bufnr number The buffer number of the telescope prompt.
 --- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
@@ -135,57 +167,6 @@ function M.open_term(prompt_bufnr, exit_on_action)
 
 	util.focus_on_telescope(prompt_bufnr)
 	util.refresh_picker(prompt_bufnr, term)
-end
-
---- Delete a buffer, with an option to force deletion.
---- @param bufnr number The buffer number to delete.
---- @param force boolean Whether to force deletion or not.
-local function delete_buffer(bufnr, force)
-	local ok, err = pcall(function()
-		vim.api.nvim_buf_delete(bufnr, { force = force })
-	end)
-
-	if not ok then
-		local msg = "Error while deleting buffer: " .. tostring(err)
-		vim.notify(msg, vim.log.levels.WARN)
-	end
-end
-
---- Delete a terminal.
---- @param prompt_bufnr number The buffer number of the telescope prompt.
---- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
-function M.delete_term(prompt_bufnr, exit_on_action)
-	local selection = actions_state.get_selected_entry()
-	if selection == nil then
-		return
-	end
-
-	local term = selection.value
-
-	-- If exit_on_action is true, we want to close the picker and shutdown the terminal.
-	if exit_on_action then
-		actions.close(prompt_bufnr)
-		term:shutdown()
-		return
-	end
-
-	-- This prevents toggleterm from doing additional processing that would cause the telescope
-	-- window to close. Toggleterm's __handle_exit is called when a terminal buffer is deleted,
-	-- which calls term:close(). term.close() calls close_split(), which changes window focus
-	-- and causes telescope to exit. See toggleterm's terminal.lua:__handle_exit and ui.lua:close_split.
-	term.close_on_exit = false
-
-	util.focus_on_origin_win()
-
-	local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
-
-	delete_buffer(selection.bufnr, force)
-
-	toggleterm_ui.set_origin_window()
-
-	util.focus_on_telescope(prompt_bufnr)
-
-	util.refresh_picker(prompt_bufnr, selection, true)
 end
 
 --- Toggle a terminal open or closed. If toggling open and exit_on_action is true, focus it.
@@ -221,10 +202,10 @@ function M.toggle_term(prompt_bufnr, exit_on_action)
 	util.refresh_picker(prompt_bufnr, term)
 end
 
---- Rename a terminal. If exit_on_action is true and the terminal is open, focus it.
+--- Delete a terminal.
 --- @param prompt_bufnr number The buffer number of the telescope prompt.
 --- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
-function M.rename_term(prompt_bufnr, exit_on_action)
+function M.delete_term(prompt_bufnr, exit_on_action)
 	local selection = actions_state.get_selected_entry()
 	if selection == nil then
 		return
@@ -232,25 +213,30 @@ function M.rename_term(prompt_bufnr, exit_on_action)
 
 	local term = selection.value
 
-	local prompt = string.format("Rename terminal %s: ", selection.term_name)
-	vim.ui.input({ prompt = prompt }, function(name)
-		util.clear_command_line()
-		if name and #name > 0 then
-			-- rename terminal within toggleterm
-			term.display_name = name
+	-- If exit_on_action is true, we want to close the picker and shutdown the terminal.
+	if exit_on_action then
+		actions.close(prompt_bufnr)
+		term:shutdown()
+		return
+	end
 
-			if exit_on_action then
-				actions.close(prompt_bufnr)
-				term:focus()
-			else
-				local current_picker = actions_state.get_current_picker(prompt_bufnr)
-				local finder, new_row_number = util.create_finder(term.id)
-				current_picker:refresh(finder, { reset_prompt = false })
+	-- This prevents toggleterm from doing additional processing that would cause the telescope
+	-- window to close. Toggleterm's __handle_exit is called when a terminal buffer is deleted,
+	-- which calls term:close(). term.close() calls close_split(), which changes window focus
+	-- and causes telescope to exit. See toggleterm's terminal.lua:__handle_exit and ui.lua:close_split.
+	term.close_on_exit = false
 
-				util.set_selection_row(current_picker, new_row_number)
-			end
-		end
-	end)
+	util.focus_on_origin_win()
+
+	local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
+
+	util.delete_buffer(selection.bufnr, force)
+
+	toggleterm_ui.set_origin_window()
+
+	util.focus_on_telescope(prompt_bufnr)
+
+	util.refresh_picker(prompt_bufnr, selection, true)
 end
 
 return M

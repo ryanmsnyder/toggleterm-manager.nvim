@@ -1,10 +1,18 @@
+local actions = require("lib.actions")
 local M = {}
 
 local defaults = {
-	mappings = {}, -- key mappings bound inside the telescope window
+	mappings = {
+		i = {
+			["<CR>"] = { action = actions.toggle_term, exit_on_action = false },
+			["<C-i>"] = { action = actions.create_term, exit_on_action = false },
+			["<C-d>"] = { action = actions.delete_term, exit_on_action = false },
+			["<C-r>"] = { action = actions.rename_term, exit_on_action = false },
+		},
+	}, -- key mappings bound inside the telescope window
 	telescope_titles = {
 		preview = "Preview", -- title of the preview buffer in telescope
-		prompt = " Pick Term", -- title of the prompt buffer in telescope
+		prompt = " Terminals", -- title of the prompt buffer in telescope
 		results = "Results", -- title of the results buffer in telescope
 	},
 	results = {

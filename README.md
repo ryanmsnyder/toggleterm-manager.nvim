@@ -1,21 +1,21 @@
-<p align="center">
-A Telescope extension to manage toggleterm's terminal buffers
-</p>
+<h1 align="center">
+A Telescope extension to manage Toggleterm's terminals in NeoVim
+</h1>
 
 ## ✨ Features
 
-- List and switch between all terminal buffers opened with `toggleterm.nvim`
+- List all terminal buffers
+- Create, delete, toggle, and rename terminal buffers within the Telescope window
 - Easily customize the appearance of the Telescope window
-- Map pre-defined and custom actions to keybindings
 
-## ⚡ Requirements
+## 🛠️ Requirements
 
-- [`telescope`](https://github.com/nvim-telescope/telescope.nvim) plugin.
-- [`nvim-toggleterm`](https://github.com/akinsho/nvim-toggleterm.lua) plugin.
+- [`telescope`](https://github.com/nvim-telescope/telescope.nvim) plugin
+- [`toggleterm`](https://github.com/akinsho/nvim-toggleterm.lua) plugin
 
-## 🛠️ Quickstart
+## ⚡ Quickstart
 
-Install using [ `lazy.nvim` ](https://github.com/folke/lazy.nvim) in lua:
+### Lazy
 
 ```lua
 {
@@ -46,25 +46,32 @@ By default, the below table is passed to the `setup` function:
 
 ```lua
 {
-	mappings = {}, -- key mappings bound inside the telescope window
+mappings = {
+    i = {
+        ["<CR>"] = { action = actions.toggle_term, exit_on_action = false }, -- toggles terminal open/closed
+        ["<C-i>"] = { action = actions.create_term, exit_on_action = false }, -- creates a new terminal buffer
+        ["<C-d>"] = { action = actions.delete_term, exit_on_action = false }, -- deletes a terminal buffer
+        ["<C-r>"] = { action = actions.rename_term, exit_on_action = false }, -- provides a prompt to rename a terminal
+    },
+}, -- key mappings bound inside the telescope window
     telescope_titles = {
         preview = "Preview", -- title of the preview buffer in telescope
-        prompt = " Pick Term", -- title of the prompt buffer in telescope
+        prompt = " Terminals", -- title of the prompt buffer in telescope
         results = "Results", -- title of the results buffer in telescope
     },
     results = {
-        fields = {
-            "state",
-            "space",
-            "term_icon",
-            "term_name",
+        fields = { -- fields that will appear in the results of the telescope window
+            "state", -- the state of the terminal buffer: h = hidden, a = active
+            "space", -- adds space between fields, if desired
+            "term_icon", -- a terminal icon
+            "term_name", -- toggleterm's display_name if it exists, else the terminal's id assigned by toggleterm
     	},
 	    separator = " ", -- the character that will be used to separate each field provided in results.fields 
-        term_icon = "", -- the icon that will be used for the term_icon in results.fields
+        term_icon = "", -- the icon that will be used for term_icon in results.fields
 
     },
     search = {
-        field = "term_name" -- the field that telescope fuzzy search will use
+        field = "term_name" -- the field that telescope fuzzy search will use when typing in the prompt
     },
 	sort = {
 		field = "term_name", -- the field that will be used for sorting in the telesocpe results
@@ -73,9 +80,10 @@ By default, the below table is passed to the `setup` function:
 }
 ```
 
+
 | Property           | Type                           | Default Value                                           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 |--------------------|--------------------------------|---------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **mappings**       | `table`                        |                                                         | A table of key mappings for different modes. Each mode (like 'i' for insert mode, 'n' for normal mode) is a key in the table and maps to another table, where the key is the key combination (e.g., "<CR>") and the value is a table with the fields 'action' and 'exit_on_action'. The 'action' field is a function that will be called when the key combination is pressed, and 'exit_on_action' is a boolean that determines whether telescope should be exited after the action is performed. See Mappings for more info. |
+| **mappings**       | `table`                        |                                                         | A table of key mappings for different modes. Each mode (`i` for insert mode, `n` for normal mode) is a key in the table and maps to another table, where the key is the key combination (e.g., "<C-r>") and the value is a table with the fields `action` and `exit_on_action`. The `action` field is a function that will be called when the key combination is pressed, and `exit_on_action` is a boolean that determines whether telescope should be exited after the action is performed. See [Mappings](https://github.com/ryanmsnyder/toggleterm-manager.nvim/blob/readme/README.md#mappings) for more info. |
 | **telescope_titles.preview**  | `string`                       | "Preview"                                               | Title of the preview buffer in telescope. Any string.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **telescope_titles.prompt**   | `string`                       | " Pick Term"                                           | Title of the prompt buffer in telescope. Any string.                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | **telescope_titles.results**  | `string`                       | "Results"                                               | Title of the results buffer in telescope. Any string.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -111,17 +119,71 @@ Note that each key in the table should correspond to the NeoVim mode that the ma
 
 #### Actions
 
-There are six pre-built actions that can be mapped to key bindings within the telescope window.
+There are six pre-defined actions that can be mapped to key bindings within the telescope window.
 
-- `create_term`: Create a new terminal and open it. If `exit_on_action = true`, focus it. If `toggleterm`'s direction is `float` and `exit_on_action = false`, create a hidden terminal.
-- `create_and_name_term`: Create and name a new terminal and open it. If `exit_on_action = true`, focus it. If `toggleterm`'s direction is `float` and `exit_on_action = false`, create a hidden terminal. The name will be reflected in the `term_name` field if it's provided in `results.field`.
-- `rename_term`: Rename a terminal. If `exit_on_action = true` and the terminal is open, focus it. The name will be reflected in the `term_name` field if it's provided in `results.field`.
-- `open_term`: Open a terminal. If `exit_on_action = true`, focus it. If `exit_on_action = false` and `toggleterm`'s direction is `float`, this action won't do anything.
-- `toggle_term`: Toggle a terminal open or closed. If toggling open and `exit_on_action = true`, focus it.
-- `delete_term`: Delete a terminal.
+> **Floating toggleterm windows:** When configuring `toggleterm` (not `toggleterm-manager`), there is a property called `direction`, which takes a value of `horizontal`, `vertical`, or `float`. Some of the actions behave differently if `direction = float`. This is because of how NeoVim handles floating windows. Telescope is already a floating window so if, for example, `direction = float`, and the `create_term` action is called with `exit_on_action = false`, there would normally be a flash caused by opening a `toggleterm` float and switching back to telescope really fast. To prevent this, the `toggleterm` window will be created as a `hidden` terminal. Note that the `open_mapping` in `toggleterm` config won't be able to toggle these terminals open/closed.
 
-> [!Floating toggleterm windows]
-> When configuring `toggleterm` (not `toggleterm-manager`), there is a property called `direction`, which takes a value of `horizontal`, `vertical`, or `float`. Some of the actions behave differently if `direction` is `float`. This is because of how NeoVim handles floating windows. Telescope is already a floating window so if, for example, `direction` is set to `float`, and the `create_term` action is called with `exit_on_action = false`, there would normally be a flash caused by opening a `toggleterm` float and switching back to telescope really fast. To prevent this, the `toggleterm` window will be created as a `hidden` terminal. Note that the `open_mapping` in `toggleterm` config won't be able to toggle these terminals open/closed.
+The below table displays the behavior of each action in `actions/init.lua` given different values for `exit_on_action` and `toggleterm`'s' `direction` property that's passed to its [`setup`](https://github.com/akinsho/toggleterm.nvim#setup) function.
+
+<table>
+    <tr>
+        <th>Action</th>
+        <th colspan="2"><code>exit_on_action = true</code></th>
+        <th colspan="2"><code>exit_on_action = false</code></th>
+    </tr>
+    <tr>
+        <th></th>
+        <th><code>direction = float</code></th>
+        <th><code>direction != float</code></th>
+        <th><code>direction = float</code></th>
+        <th><code>direction != float</code></th>
+    </tr>
+    <tr>
+        <td><code>create_term</code></td>
+        <td>Create and focus a new terminal</td>
+        <td>Create and focus a new terminal</td>
+        <td>Create a <i>hidden</i> terminal</td>
+        <td>Create a new terminal</td>
+    </tr>
+    <tr>
+        <td><code>create_and_name_term</code></td>
+        <td>Create, name, and focus a new terminal</td>
+        <td>Create, name, and focus a new terminal</td>
+        <td>Create a <i>hidden</i> terminal and name it</td>
+        <td>Create and name a new terminal</td>
+    </tr>
+    <tr>
+        <td><code>rename_term</code></td>
+        <td>Rename and focus the terminal if open</td>
+        <td>Rename and focus the terminal if open</td>
+        <td>Rename the terminal</td>
+        <td>Rename the terminal</td>
+    </tr>
+    <tr>
+        <td><code>open_term</code></td>
+        <td>Open and focus the terminal</td>
+        <td>Open and focus the terminal</td>
+        <td>Nothing will happen</td>
+        <td>Open the terminal</td>
+    </tr>
+    <tr>
+        <td><code>toggle_term</code></td>
+        <td>Toggle terminal open or closed, focus if open</td>
+        <td>Toggle terminal open or closed, focus if open</td>
+        <td>Toggle terminal open or closed</td>
+        <td>Toggle terminal open or closed</td>
+    </tr>
+    <tr>
+        <td><code>delete_term</code></td>
+        <td>Delete the terminal</td>
+        <td>Delete the terminal</td>
+        <td>Delete the terminal</td>
+        <td>Delete the terminal</td>
+    </tr>
+</table>
+
+
+
 
 #### Custom Actions
 
@@ -156,6 +218,8 @@ The background and foreground colors of the results fields can also be customize
 
 #### Examples
 
+Example of only providing fields (no highlight groups). When a highlight group is not specified for a field, `toggleterm-manager` chooses the highlight group:
+
 ```lua
 local toggleterm_manager = require("toggleterm-manager")
 local actions = toggleterm_manager.actions
@@ -167,7 +231,7 @@ toggleterm_manager.setup {
 }
 ```
 
-Example of providing highlight groups:
+Example of providing highlight groups for some fields and not for others. When a highlight group is paired with a field in a table, that highlight group overrides the default that `toggleterm-manager` chooses.
 
 ```lua
 results = {

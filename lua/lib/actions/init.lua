@@ -7,8 +7,8 @@ local Terminal = require("toggleterm.terminal").Terminal
 
 local M = {}
 
---- Create a new terminal and open it. If exit_on_action is true, focus it. If the term's direction is "float" and
---- exit_on_action is false, don't automatically open the terminal upon creation to prevent flashes.
+--- Create a new terminal and open it. If `exit_on_action = true`, focus it. If the term's direction is `float` and
+--- `exit_on_action = false`, don't automatically open the terminal upon creation to prevent flashes.
 --- @param prompt_bufnr number The buffer number of the telescope prompt.
 --- @param exit_on_action boolean Whether to exit the telescope buffer when the action executes.
 function M.create_term(prompt_bufnr, exit_on_action)

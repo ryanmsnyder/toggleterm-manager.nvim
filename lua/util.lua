@@ -3,6 +3,7 @@ local toggleterm = require("toggleterm.terminal")
 local toggleterm_ui = require("toggleterm.ui")
 local Path = require("plenary.path")
 local actions_state = require("telescope.actions.state")
+local telescope_config = require("telescope.config").values
 
 local M = {}
 local function_name_to_description = {
@@ -149,7 +150,14 @@ function M.create_finder(cur_row_term_id)
 		if cur_row_term_id then
 			for i, term in ipairs(terms) do
 				if term.id == cur_row_term_id then
-					new_row_num = i - 1
+					-- When telescope's `defaults.sorting_strategy` config property is set to descending (which is the defualt),
+					-- the telescope rows start at 250 and count down. In other words, row 250 is the equivalent of row 0 and row 249 is the same
+					-- as row 1 `defaults.sorting_strategy = descending`.
+					if telescope_config.sorting_strategy == "descending" then
+						new_row_num = 250 - i
+					elseif telescope_config.sorting_strategy == "ascending" then
+						new_row_num = i - 1
+					end
 					break
 				end
 			end
@@ -186,8 +194,8 @@ function M.focus_on_telescope(prompt_bufnr)
 	print("Telescope buffer not visible in any window")
 end
 
---- Focus on the open telescope buffer and refresh the picker so the changes to the terminal buffers caused by an action in
---- actions/init.lua are reflected in telescope.
+--- Refresh the picker so the changes to the terminal buffers caused by an action in
+--- actions/init.lua are reflected in telescope. Useful for actions that are executed with exit_on_action = false.
 --- @param prompt_bufnr number The buffer number of the prompt.
 --- @param selection table The current selection object.
 --- @param deleted boolean|nil A boolean indicating if the selection was deleted.
@@ -195,9 +203,19 @@ function M.refresh_picker(prompt_bufnr, selection, deleted)
 	local current_picker = actions_state.get_current_picker(prompt_bufnr)
 	local finder, new_row_number = M.create_finder(selection.id)
 
-	-- If an item has been deleted, we need to adjust the row number
-	if deleted and selection.index > 1 then
-		new_row_number = selection.index - 2
+	-- When telescope's `defaults.sorting_strategy` config property is set to descending (which is the defualt),
+	-- the telescope rows start at 250 and count down. In other words, row 250 is the equivalent of row 0 and row 249 is the same
+	-- as row 1 `defaults.sorting_strategy = descending`.
+	if deleted then
+		if telescope_config.sorting_strategy == "descending" then
+			if selection.index > 1 then
+				new_row_number = 250 - selection.index + 1
+			end
+		elseif telescope_config.sorting_strategy == "ascending" then
+			if selection.index > 1 then
+				new_row_number = selection.index - 2
+			end
+		end
 	end
 
 	current_picker:refresh(finder, { reset_prompt = false })
@@ -211,8 +229,7 @@ function M.refresh_picker(prompt_bufnr, selection, deleted)
 	end
 end
 
---- Set the selection row in the telescope picker. Useful for keeping the selection on the current entry after an action in
---- actions/init.lua is run and refresh_picker is run.
+--- Set the selection row in the telescope picker. Useful for keeping the selection on the current entry after an action in actions/init.lua is run.
 --- @param picker table The telescope picker object.
 --- @param row_number number The row number to set the selection to.
 function M.set_selection_row(picker, row_number)

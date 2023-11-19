@@ -20,14 +20,14 @@ A Telescope extension to manage Toggleterm's terminals in NeoVim
 ```lua
 {
   "ryanmsnyder/toggleterm-manager.nvim",
-  event = "TermOpen",
   dependencies = {
      "akinsho/nvim-toggleterm.lua",
      "nvim-telescope/telescope.nvim",
-     "nvim-lua/popup.nvim",
      "nvim-lua/plenary.nvim",
   },
-  config = require("toggleterm-manager").setup()
+  config = function()
+    require("toggleterm-manager").setup()
+  end
 }
 ```
 
@@ -95,7 +95,7 @@ By default, the below table is passed to the `setup` function:
 | **sort.ascending** | `boolean`                      | true                                                    | Determines the order used for sorting the telescope results. `true` = ascending, `false` = descending.                                                                                                                                                                                                                                                                                                                                                                                            |
 ### Mappings
 
-The `mappings` table should look something like this:
+If you'd like to override the default keybindings, the `mappings` table should look something like this:
 
 ```lua
 local toggleterm_manager = require("toggleterm-manager")
@@ -104,11 +104,11 @@ local actions = toggleterm_manager.actions
 toggleterm_manager.setup {
 	mappings = {
 	    i = {
-	      ["<CR>"] = { action = actions.open_term, exit_on_action = true },
+	      ["<CR>"] = { action = actions.create_and_name_term, exit_on_action = true },
 	      ["<C-d>"] = { action = actions.delete_term, exit_on_action = false },
 	    },
 	    n = {
-	      ["<CR>"] = { action = actions.open_term, exit_on_action = true },
+	      ["<CR>"] = { action = actions.create_and_name_term, exit_on_action = true },
 	      ["x"] = { action = actions.delete_term, exit_on_action = false },
 	    },
 	},

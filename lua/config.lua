@@ -10,7 +10,7 @@ local defaults = {
 			["<C-r>"] = { action = actions.rename_term, exit_on_action = false },
 		},
 	}, -- key mappings bound inside the telescope window
-	telescope_titles = {
+	titles = {
 		preview = "Preview", -- title of the preview buffer in telescope
 		prompt = " Terminals", -- title of the prompt buffer in telescope
 		results = "Results", -- title of the results buffer in telescope

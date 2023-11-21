@@ -2,6 +2,10 @@
 A Telescope extension to manage Toggleterm's terminals in NeoVim
 </h1>
 
+
+https://github.com/ryanmsnyder/toggleterm-manager.nvim/assets/41448219/4463f8c6-e111-48ef-a19d-6b8219615651
+
+
 ## ✨ Features
 
 - List all terminal buffers

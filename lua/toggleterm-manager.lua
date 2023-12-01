@@ -12,4 +12,6 @@ M.open = require("lib.telescope").open
 M.setup = function(opts)
 	require("config").setup(opts)
 end
+M.utils = require("lib.utils")
+
 return M

@@ -2,7 +2,7 @@ local actions = require("telescope.actions")
 local actions_state = require("telescope.actions.state")
 local toggleterm_ui = require("toggleterm.ui")
 local toggleterm_config = require("toggleterm.config")
-local util = require("util")
+local utils = require("lib.utils")
 local Terminal = require("toggleterm.terminal").Terminal
 
 local M = {}
@@ -23,8 +23,8 @@ function M.create_term(prompt_bufnr, exit_on_action)
 				-- set origin window to current term before switching back to telescope
 				-- this ensures the cursor is moved to the correct term window after closing a term
 				toggleterm_ui.set_origin_window()
-				util.focus_on_telescope(prompt_bufnr)
-				util.refresh_picker(prompt_bufnr, term)
+				utils.focus_on_telescope(prompt_bufnr)
+				utils.refresh_picker(prompt_bufnr, term)
 				-- remove the on_open callback to avoid potential side effects in future actions.
 				term.on_open = nil
 			end)
@@ -37,7 +37,7 @@ function M.create_term(prompt_bufnr, exit_on_action)
 		-- the autocommand setup in telescope/init.lua that starts insert mode on leaving the telescope buffer
 		-- won't work here since the cursor may move to a non-toggleterm buftype for a brief moment while the
 		-- toggleterm buffer is being created
-		util.start_insert_mode()
+		utils.start_insert_mode()
 	end
 
 	term = Terminal:new({ hidden = float, on_open = on_open_terminal })
@@ -46,11 +46,11 @@ function M.create_term(prompt_bufnr, exit_on_action)
 		term:open()
 	elseif float then
 		term:spawn()
-		util.refresh_picker(prompt_bufnr, term)
+		utils.refresh_picker(prompt_bufnr, term)
 		-- remove the on_open callback to avoid potential side effects in future actions.
 		term.on_open = nil
 	else
-		util.focus_on_origin_win()
+		utils.focus_on_origin_win()
 		term:open()
 	end
 end
@@ -64,7 +64,7 @@ function M.create_and_name_term(prompt_bufnr, exit_on_action)
 	local prompt = "Name terminal: "
 
 	vim.ui.input({ prompt = prompt }, function(name)
-		util.clear_command_line()
+		utils.clear_command_line()
 		if name and #name > 0 then
 			local term
 			local function on_open_terminal()
@@ -73,8 +73,8 @@ function M.create_and_name_term(prompt_bufnr, exit_on_action)
 						-- set origin window to current term before switching back to telescope
 						-- this ensures the cursor is moved to the correct term window after closing a term
 						toggleterm_ui.set_origin_window()
-						util.focus_on_telescope(prompt_bufnr)
-						util.refresh_picker(prompt_bufnr, term)
+						utils.focus_on_telescope(prompt_bufnr)
+						utils.refresh_picker(prompt_bufnr, term)
 						-- remove the on_open callback to avoid potential side effects in future actions.
 						term.on_open = nil
 					end)
@@ -87,7 +87,7 @@ function M.create_and_name_term(prompt_bufnr, exit_on_action)
 				-- the autocommand setup in telescope/init.lua that starts insert mode on leaving the telescope buffer
 				-- won't work here since the cursor may move to a non-toggleterm buftype for a brief moment while the
 				-- toggleterm buffer is being created
-				util.start_insert_mode()
+				utils.start_insert_mode()
 			end
 
 			term = Terminal:new({ display_name = name, hidden = float, on_open = on_open_terminal })
@@ -96,11 +96,11 @@ function M.create_and_name_term(prompt_bufnr, exit_on_action)
 				term:open()
 			elseif float then
 				term:spawn()
-				util.refresh_picker(prompt_bufnr, term)
+				utils.refresh_picker(prompt_bufnr, term)
 				-- remove the on_open callback to avoid potential side effects in future actions.
 				term.on_open = nil
 			else
-				util.focus_on_origin_win()
+				utils.focus_on_origin_win()
 				term:open()
 			end
 		end
@@ -120,7 +120,7 @@ function M.rename_term(prompt_bufnr, exit_on_action)
 
 	local prompt = string.format("Rename terminal %s: ", selection.term_name)
 	vim.ui.input({ prompt = prompt }, function(name)
-		util.clear_command_line()
+		utils.clear_command_line()
 		if name and #name > 0 then
 			-- rename terminal within toggleterm
 			term.display_name = name
@@ -130,10 +130,10 @@ function M.rename_term(prompt_bufnr, exit_on_action)
 				term:focus()
 			else
 				local current_picker = actions_state.get_current_picker(prompt_bufnr)
-				local finder, new_row_number = util.create_finder(term.id)
+				local finder, new_row_number = utils.create_finder(term.id)
 				current_picker:refresh(finder, { reset_prompt = false })
 
-				util.set_selection_row(current_picker, new_row_number)
+				utils.set_selection_row(current_picker, new_row_number)
 			end
 		end
 	end)
@@ -156,17 +156,17 @@ function M.open_term(prompt_bufnr, exit_on_action)
 			term:open()
 		end
 		term:focus()
-		util.start_insert_mode()
+		utils.start_insert_mode()
 		return
 	end
 
-	util.focus_on_origin_win()
+	utils.focus_on_origin_win()
 	if not term:is_open() then
 		term:open()
 	end
 
-	util.focus_on_telescope(prompt_bufnr)
-	util.refresh_picker(prompt_bufnr, term)
+	utils.focus_on_telescope(prompt_bufnr)
+	utils.refresh_picker(prompt_bufnr, term)
 end
 
 --- Toggle a terminal open or closed. If toggling open and exit_on_action is true, focus it.
@@ -185,11 +185,11 @@ function M.toggle_term(prompt_bufnr, exit_on_action)
 	if exit_on_action then
 		actions.close(prompt_bufnr)
 		term:toggle()
-		util.start_insert_mode()
+		utils.start_insert_mode()
 		return
 	end
 
-	util.focus_on_origin_win()
+	utils.focus_on_origin_win()
 	if term:is_open() then
 		term:close()
 		current_picker.original_win_id = toggleterm_ui.get_origin_window()
@@ -198,8 +198,8 @@ function M.toggle_term(prompt_bufnr, exit_on_action)
 		current_picker.original_win_id = term.window
 	end
 
-	util.focus_on_telescope(prompt_bufnr)
-	util.refresh_picker(prompt_bufnr, term)
+	utils.focus_on_telescope(prompt_bufnr)
+	utils.refresh_picker(prompt_bufnr, term)
 end
 
 --- Delete a terminal.
@@ -226,17 +226,17 @@ function M.delete_term(prompt_bufnr, exit_on_action)
 	-- and causes telescope to exit. See toggleterm's terminal.lua:__handle_exit and ui.lua:close_split.
 	term.close_on_exit = false
 
-	util.focus_on_origin_win()
+	utils.focus_on_origin_win()
 
 	local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
 
-	util.delete_buffer(selection.bufnr, force)
+	utils.delete_buffer(selection.bufnr, force)
 
 	toggleterm_ui.set_origin_window()
 
-	util.focus_on_telescope(prompt_bufnr)
+	utils.focus_on_telescope(prompt_bufnr)
 
-	util.refresh_picker(prompt_bufnr, selection, true)
+	utils.refresh_picker(prompt_bufnr, selection, true)
 end
 
 return M

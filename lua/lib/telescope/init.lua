@@ -1,7 +1,7 @@
 local pickers = require("telescope.pickers")
 local telescope_actions = require("telescope.actions")
 local conf = require("telescope.config").values
-local util = require("util")
+local utils = require("lib.utils")
 
 --- Create autocommand to enter insert mode when the cursor leaves the telescope buffer.
 --- Useful for actions that are called with exit_on_action set to false b/c it allows the user
@@ -20,7 +20,7 @@ local function telescope_leave_autocmd(picker)
 				local picker_orig_win_bufnr = vim.fn.winbufnr(picker.original_win_id)
 				local buftype = vim.api.nvim_buf_get_option(picker_orig_win_bufnr, "filetype")
 				if buftype == "toggleterm" then
-					util.start_insert_mode()
+					utils.start_insert_mode()
 				end
 			end
 		end,
@@ -38,10 +38,11 @@ M.open = function(opts)
 
 	local picker = pickers.new(opts, {
 		prompt_title = config.titles.prompt,
-		results_title = config.display_mappings and util.format_results_title(config.mappings) or config.titles.results,
+		results_title = config.display_mappings and utils.format_results_title(config.mappings)
+			or config.titles.results,
 		preview_title = config.titles.preview,
 		previewer = conf.grep_previewer(opts),
-		finder = util.create_finder(),
+		finder = utils.create_finder(),
 		sorter = conf.generic_sorter(opts),
 		attach_mappings = function(prompt_bufnr, map)
 			local mappings = config.mappings
